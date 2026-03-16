@@ -28,3 +28,11 @@
 - TypeScript 向けのバリデーションライブラリです。
 - スキーマを書いて、フォーム入力や API 入出力が正しい形か検証できます。定義したスキーマから型推論もできます。
 - 現在は Zod 4 が stable と案内されています。
+
+## 画面遷移・UIまわり
+
+`react-router-dom`
+- React アプリの画面遷移を担当するルーターです。
+- URL に応じてページを切り替えます。
+- 公式では React Router は React 用の multi-strategy router と説明されていて、Web プロジェクトでは createBrowserRouter が推奨されています。
+- なお公式インストール例は最近 react-router 表記が中心なので、将来的に使い分けは確認したほうがよいです。
