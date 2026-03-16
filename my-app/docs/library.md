@@ -36,3 +36,19 @@
 - URL に応じてページを切り替えます。
 - 公式では React Router は React 用の multi-strategy router と説明されていて、Web プロジェクトでは createBrowserRouter が推奨されています。
 - なお公式インストール例は最近 react-router 表記が中心なので、将来的に使い分けは確認したほうがよいです。
+
+`clsx`
+- className を条件付きで組み立てるための小さいユーティリティです。
+- たとえば「active のときだけこのクラスを付ける」を書きやすくします。
+- 公式 README では className strings conditionally を作るための軽量ツールとされています。
+
+`tailwind-merge`
+- Tailwind CSS のクラス競合を整理するためのライブラリです。
+- たとえば p-2 p-4 のように競合するクラスが並んだとき、どれを勝たせるかをルールベースでまとめてくれます。
+- 主な用途は、コンポーネントのデフォルトクラスと外から渡された className を安全にマージすることです。
+- Tailwind v4 系対応も案内されています。
+
+`lucide-react`
+- React 用のアイコンライブラリです。
+- 各アイコンを React コンポーネントとして import でき、SVG として描画されます。
+- ES Modules ベースで tree-shaking しやすいのが特徴です。
