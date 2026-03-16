@@ -52,3 +52,23 @@
 - React 用のアイコンライブラリです。
 - 各アイコンを React コンポーネントとして import でき、SVG として描画されます。
 - ES Modules ベースで tree-shaking しやすいのが特徴です。
+
+## スタイリング・開発基盤まわり
+
+`tailwindcss`
+- ユーティリティクラスでスタイルを組み立てる CSS フレームワークです。
+- React/Vite 構成でも普通に使えます。
+
+`@tailwindcss/vite`
+- Tailwind CSS を Vite に統合する公式の Vite プラグインです。
+- Tailwind 公式は、Vite ではこれを使う方法が最もシームレスで、v4 では PostCSS より高いパフォーマンスも案内しています。
+
+`typescript`
+- JavaScript に型システムを加えた言語・ツールチェーンです。
+- 型チェック、補完、リファクタリング支援が強くなります。
+- 公式では「JavaScript with syntax for types」と説明されています。
+
+`@types/node`
+- Node.js の型定義です。
+- vite.config.ts や path, process.env など、Node 側の API を TypeScript で正しく扱うために入れることが多いです。
+- npm でも “TypeScript definitions for node” とされています。
