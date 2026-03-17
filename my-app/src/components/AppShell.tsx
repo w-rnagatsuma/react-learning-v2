@@ -49,7 +49,6 @@ export function AppShell() {
             <Link
               to="/"
               className="inline-flex items-center gap-2 font-semibold text-foreground"
-              onClick={() => setIsSidebarOpen(false)}
             >
               <span className="inline-flex h-7 w-7 items-center justify-center rounded bg-primary text-xs text-primary-foreground">
                 RL
@@ -62,7 +61,6 @@ export function AppShell() {
             to="/profile"
             aria-label="プロフィールへ移動"
             className="rounded-full transition-opacity hover:opacity-80"
-            onClick={() => setIsSidebarOpen(false)}
           >
             <Avatar size="sm">
               <AvatarFallback>{initials}</AvatarFallback>
@@ -77,7 +75,6 @@ export function AppShell() {
           type="button"
           className="fixed inset-0 z-20 bg-black/30 md:hidden"
           aria-label="メニューを閉じる"
-          onClick={() => setIsSidebarOpen(false)}
         />
       ) : null}
 
@@ -98,7 +95,6 @@ export function AppShell() {
                 key={item.to}
                 to={item.to}
                 end={item.end}
-                onClick={() => setIsSidebarOpen(false)}
                 className={({ isActive }) =>
                   cn(
                     "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
