@@ -1,18 +1,23 @@
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
-import superjson from "superjson";
-import type { AppRouter } from "@repo/api-types";
+type RequestInitWithCredentials = RequestInit & {
+  credentials?: RequestCredentials;
+};
 
-export const trpcClient = createTRPCClient<AppRouter>({
-  links: [
-    httpBatchLink({
-      url: "/trpc",
-      transformer: superjson,
-      fetch(url, options) {
-        return fetch(url, {
-          ...options,
-          credentials: "include",
-        });
-      },
-    }),
-  ],
-});
+export async function trpcFetch(
+  path: string,
+  init?: RequestInitWithCredentials,
+) {
+  const response = await fetch(`/trpc/${path}`, {
+    ...init,
+    credentials: "include",
+    headers: {
+      "content-type": "application/json",
+      ...(init?.headers ?? {}),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`tRPC request failed: ${response.status}`);
+  }
+
+  return response.json();
+}
