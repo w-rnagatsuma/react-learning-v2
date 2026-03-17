@@ -1,6 +1,9 @@
 import type { PropsWithChildren } from "react";
-import { SessionContext, type SessionContextValue } from "./SessionContext";
 import { useCurrentUser } from "@/hooks/api/useCurrentUser";
+import {
+  SessionContext,
+  type SessionContextValue,
+} from "@/api/session/SessionContext";
 
 export function SessionProvider({ children }: PropsWithChildren) {
   const { data, isLoading } = useCurrentUser();
@@ -12,8 +15,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
   };
 
   return (
-    <SessionContext.Provider value={value}>
-      {children}
-    </SessionContext.Provider>
+    <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
   );
 }

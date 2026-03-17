@@ -1,24 +1,25 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { trpcClient } from "@/api/trpc/client";
+import { createContext, useContext } from "react";
 
-type Input = {
-  displayName: string;
+export type SessionUser = {
+  id: string;
+  name: string;
+  email: string;
 };
 
-export function useUpdateProfile() {
-  const queryClient = useQueryClient();
+export type SessionContextValue = {
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  user: SessionUser | null;
+};
 
-  return useMutation({
-    mutationFn: async (input: Input) => {
-      return await trpcClient.user.updateProfile.mutate(input);
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["auth", "me"],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ["user", "profile"],
-      });
-    },
-  });
+export const SessionContext = createContext<SessionContextValue | null>(null);
+
+export function useSession() {
+  const context = useContext(SessionContext);
+
+  if (!context) {
+    throw new Error("useSession must be used within SessionProvider");
+  }
+
+  return context;
 }

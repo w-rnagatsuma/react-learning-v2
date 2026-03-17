@@ -2,10 +2,10 @@ type RequestInitWithCredentials = RequestInit & {
   credentials?: RequestCredentials;
 };
 
-export async function trpcFetch(
+export async function trpcFetch<TResponse>(
   path: string,
   init?: RequestInitWithCredentials,
-) {
+): Promise<TResponse> {
   const response = await fetch(`/trpc/${path}`, {
     ...init,
     credentials: "include",
@@ -19,5 +19,5 @@ export async function trpcFetch(
     throw new Error(`tRPC request failed: ${response.status}`);
   }
 
-  return response.json();
+  return response.json() as Promise<TResponse>;
 }
