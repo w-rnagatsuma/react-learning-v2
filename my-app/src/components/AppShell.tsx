@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
-import { Home, Menu, UserRound } from "lucide-react";
+import { BriefcaseBusiness, Home, Menu, UserRound } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSession } from "@/api/session/useSession";
 
 const navItems = [
   { to: "/", label: "ホーム", icon: Home, end: true },
+  { to: "/services", label: "サービス", icon: BriefcaseBusiness, end: false },
   { to: "/profile", label: "プロフィール", icon: UserRound, end: false },
 ] as const;
 
