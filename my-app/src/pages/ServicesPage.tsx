@@ -96,7 +96,17 @@ export function ServicesPage() {
   const handleExecuteService = useCallback((serviceId: string) => {
     const executionPath = `/services/${encodeURIComponent(serviceId)}/execute`;
     const executionUrl = new URL(executionPath, window.location.origin).toString();
-    window.open(executionUrl, "_blank", "noopener,noreferrer");
+    const windowFeatures = [
+      "popup=yes",
+      "width=1280",
+      "height=860",
+      "left=120",
+      "top=80",
+      "noopener",
+      "noreferrer",
+    ].join(",");
+
+    window.open(executionUrl, `_service_execute_${encodeURIComponent(serviceId)}`, windowFeatures);
   }, []);
 
   if (isAuthLoading) {
