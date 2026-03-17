@@ -227,7 +227,7 @@ export function ServicesPage() {
                   最終更新日{sortIndicator("updatedAt")}
                 </button>
               </th>
-              <th className="px-4 py-3 font-medium">説明</th>
+              <th className="whitespace-nowrap px-4 py-3 font-medium">実行</th>
             </tr>
           </thead>
 
@@ -243,7 +243,11 @@ export function ServicesPage() {
                 <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{service.owner}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{service.status}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{service.updatedAt}</td>
-                <td className="min-w-80 px-4 py-3 text-muted-foreground">{service.description}</td>
+                <td className="whitespace-nowrap px-4 py-3">
+                  <Button type="button" size="sm" variant="secondary" onClick={() => console.log("Execute service:", service.id)}>
+                    実行
+                  </Button>
+                </td>
               </tr>
             ))}
           </tbody>
