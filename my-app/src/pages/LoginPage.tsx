@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useSession } from "@/api/session/useSession";
 import { useLogin } from "@/hooks/api/useLogin";
+import { getDevCredentials, isDevMode } from "@/api/session/devMockAuth";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ export function LoginPage() {
   const login = useLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const devCredentials = getDevCredentials();
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -37,6 +39,11 @@ export function LoginPage() {
         <CardHeader>
           <CardTitle className="text-2xl">Login</CardTitle>
           <CardDescription>メールアドレスとパスワードを入力してください</CardDescription>
+          {isDevMode() ? (
+            <p className="text-xs text-muted-foreground">
+              開発用: {devCredentials.email} / {devCredentials.password}
+            </p>
+          ) : null}
         </CardHeader>
 
         <CardContent>

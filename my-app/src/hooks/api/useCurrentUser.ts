@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { trpcFetch } from "@/api/trpc/client";
+import { getDevLoggedInUser } from "@/api/session/devMockAuth";
 
 export type CurrentUser = {
   id: string;
@@ -15,7 +16,12 @@ export function useCurrentUser() {
   return useQuery({
     queryKey: ["auth", "me"],
     queryFn: async () => {
-      return trpcFetch<MeResponse>("auth.me");
+      try {
+        return await trpcFetch<MeResponse>("auth.me");
+      } catch {
+        const devUser = getDevLoggedInUser();
+        return { user: devUser };
+      }
     },
   });
 }
