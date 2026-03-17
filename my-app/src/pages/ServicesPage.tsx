@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
@@ -92,6 +92,12 @@ export function ServicesPage() {
     setPageSize(nextPageSize);
     setPage(1);
   };
+
+  const handleExecuteService = useCallback((serviceId: string) => {
+    const executionPath = `/services/${encodeURIComponent(serviceId)}/execute`;
+    const executionUrl = new URL(executionPath, window.location.origin).toString();
+    window.open(executionUrl, "_blank", "noopener,noreferrer");
+  }, []);
 
   if (isAuthLoading) {
     return <div className="p-6">Loading...</div>;
@@ -244,7 +250,12 @@ export function ServicesPage() {
                 <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{service.status}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{service.updatedAt}</td>
                 <td className="whitespace-nowrap px-4 py-3">
-                  <Button type="button" size="sm" variant="secondary" onClick={() => console.log("Execute service:", service.id)}>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handleExecuteService(service.id)}
+                  >
                     実行
                   </Button>
                 </td>
