@@ -1,9 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { useRecentServiceExecutions } from "@/hooks/api/useRecentServiceExecutions";
 import { useServices } from "@/hooks/api/useServices";
 
 type SortKey = "id" | "name" | "category" | "owner" | "status" | "updatedAt";
@@ -13,15 +11,7 @@ const PAGE_SIZE_OPTIONS = [5, 10, 20] as const;
 export function ServicesPage() {
   const { isLoading: isAuthLoading, isAuthenticated } = useRequireAuth();
   const { data, isLoading, isError } = useServices();
-  const {
-    data: recentExecutionsData,
-    isLoading: isRecentExecutionsLoading,
-  } = useRecentServiceExecutions(4);
   const services = useMemo(() => data?.services ?? [], [data?.services]);
-  const recentExecutions = useMemo(
-    () => recentExecutionsData?.recentExecutions ?? [],
-    [recentExecutionsData?.recentExecutions],
-  );
   const [keyword, setKeyword] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -146,54 +136,6 @@ export function ServicesPage() {
 
       {isLoading ? <p>サービスを読み込み中です...</p> : null}
       {isError ? <p className="text-destructive">サービスの取得に失敗しました。</p> : null}
-
-      <section className="space-y-3 rounded-md border bg-gradient-to-r from-sky-50 via-blue-50 to-cyan-50 p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-800">最近実行したサービス</h2>
-          <p className="text-xs text-slate-600">最新4件（サービス単位）</p>
-        </div>
-
-        {isRecentExecutionsLoading ? (
-          <p className="text-sm text-slate-600">最近の実行履歴を読み込み中です...</p>
-        ) : null}
-
-        {!isRecentExecutionsLoading && recentExecutions.length === 0 ? (
-          <p className="text-sm text-slate-600">まだ実行されたサービスはありません。</p>
-        ) : null}
-
-        {recentExecutions.length > 0 ? (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {recentExecutions.map((recent) => (
-              <Card
-                key={recent.serviceId}
-                className="border border-sky-200/70 bg-white/90 transition-transform duration-150 hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <CardHeader className="space-y-1">
-                  <CardDescription className="text-xs text-slate-500">{recent.serviceId}</CardDescription>
-                  <CardTitle className="text-sm font-semibold text-slate-900">{recent.serviceName}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-1.5 text-xs text-slate-700">
-                  <p>カテゴリ: {recent.category}</p>
-                  <p>ステータス: {recent.status}</p>
-                  <p>最終実行者: {recent.lastExecutedByName}</p>
-                  <p>最終実行: {new Date(recent.lastExecutedAt).toLocaleString("ja-JP")}</p>
-                  <p className="font-medium text-sky-700">累計実行回数: {recent.totalExecutions}回</p>
-                  <div className="pt-1">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => handleExecuteService(recent.serviceId)}
-                    >
-                      実行
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : null}
-      </section>
 
       {!isLoading && !isError ? (
         <div className="space-y-3 rounded-md border bg-muted/20 p-3">
