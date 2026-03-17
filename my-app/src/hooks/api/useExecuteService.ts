@@ -19,6 +19,9 @@ export function useExecuteService() {
         queryKey: ["services", "list"],
       });
       await queryClient.invalidateQueries({
+        queryKey: ["services", "recentExecutions"],
+      });
+      await queryClient.invalidateQueries({
         queryKey: ["serviceSessions", variables.serviceId],
       });
     },

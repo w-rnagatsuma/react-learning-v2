@@ -19,6 +19,16 @@ export type ServiceSessionRecord = {
   result: "success";
 };
 
+export type RecentServiceExecutionRecord = {
+  serviceId: string;
+  serviceName: string;
+  category: string;
+  status: ServiceStatus;
+  lastExecutedAt: string;
+  lastExecutedByName: string;
+  totalExecutions: number;
+};
+
 const DEV_SERVICE_TABLE_KEY = "dev_mock_service_table";
 const DEV_SERVICE_SESSION_TABLE_KEY = "dev_mock_service_session_table";
 
@@ -133,6 +143,50 @@ export const devMockServiceDb = {
     return getServiceSessionTable()
       .filter((session) => session.serviceId === serviceId)
       .sort((a, b) => b.executedAt.localeCompare(a.executedAt));
+  },
+
+  listRecentServiceExecutions(limit = 4) {
+    const sessions = [...getServiceSessionTable()].sort(
+      (a, b) => b.executedAt.localeCompare(a.executedAt),
+    );
+    const servicesById = new Map(
+      getServiceTable().map((service) => [service.id, service] as const),
+    );
+    const totalExecutionsByServiceId = sessions.reduce((acc, session) => {
+      const current = acc.get(session.serviceId) ?? 0;
+      acc.set(session.serviceId, current + 1);
+      return acc;
+    }, new Map<string, number>());
+    const recent: RecentServiceExecutionRecord[] = [];
+    const seenServiceIds = new Set<string>();
+
+    for (const session of sessions) {
+      if (seenServiceIds.has(session.serviceId)) {
+        continue;
+      }
+
+      const service = servicesById.get(session.serviceId);
+      if (!service) {
+        continue;
+      }
+
+      recent.push({
+        serviceId: service.id,
+        serviceName: service.name,
+        category: service.category,
+        status: service.status,
+        lastExecutedAt: session.executedAt,
+        lastExecutedByName: session.executedByName,
+        totalExecutions: totalExecutionsByServiceId.get(service.id) ?? 1,
+      });
+      seenServiceIds.add(session.serviceId);
+
+      if (recent.length >= limit) {
+        break;
+      }
+    }
+
+    return recent;
   },
 
   executeService(input: {
