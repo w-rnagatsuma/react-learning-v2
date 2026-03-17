@@ -1,10 +1,16 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "@/App";
+import { AppQueryProvider } from "@/api/trpc/provider";
+import { SessionProvider } from "@/api/session/SessionContext";
+import "./index.css";
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <AppQueryProvider>
+      <SessionProvider>
+        <App />
+      </SessionProvider>
+    </AppQueryProvider>
+  </React.StrictMode>,
+);
