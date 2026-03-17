@@ -1,14 +1,16 @@
 import { useSession } from "@/api/session/useSession";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 export function HomePage() {
-  const { isLoading, isAuthenticated, user } = useSession();
+  const { isLoading, isAuthenticated } = useRequireAuth();
+  const { user } = useSession();
 
   if (isLoading) {
     return <div className="p-6">Loading...</div>;
   }
 
   if (!isAuthenticated) {
-    return <div className="p-6">未ログインです</div>;
+    return null;
   }
 
   return (
