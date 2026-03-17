@@ -1,0 +1,178 @@
+export type ServiceStatus = "稼働中" | "メンテナンス" | "停止中";
+
+export type ServiceRecord = {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  owner: string;
+  status: ServiceStatus;
+  updatedAt: string;
+};
+
+export type ServiceSessionRecord = {
+  id: string;
+  serviceId: string;
+  executedByUserId: string;
+  executedByName: string;
+  executedAt: string;
+  result: "success";
+};
+
+const DEV_SERVICE_TABLE_KEY = "dev_mock_service_table";
+const DEV_SERVICE_SESSION_TABLE_KEY = "dev_mock_service_session_table";
+
+const initialServiceTable: ServiceRecord[] = [
+  {
+    id: "svc-001",
+    name: "会員管理サービス",
+    description: "ユーザー登録・認証・権限管理を行う管理対象サービス。",
+    category: "認証",
+    owner: "運用チームA",
+    status: "稼働中",
+    updatedAt: "2026-03-15",
+  },
+  {
+    id: "svc-002",
+    name: "決済連携サービス",
+    description: "カード決済・請求処理を管理する管理対象サービス。",
+    category: "決済",
+    owner: "業務システム部",
+    status: "メンテナンス",
+    updatedAt: "2026-03-12",
+  },
+  {
+    id: "svc-003",
+    name: "通知配信サービス",
+    description: "メール・Push通知配信を管理する管理対象サービス。",
+    category: "コミュニケーション",
+    owner: "顧客基盤チーム",
+    status: "稼働中",
+    updatedAt: "2026-03-10",
+  },
+  {
+    id: "svc-004",
+    name: "監査ログ管理サービス",
+    description: "操作履歴・監査ログを一元管理する管理対象サービス。",
+    category: "監査",
+    owner: "セキュリティ管理室",
+    status: "停止中",
+    updatedAt: "2026-03-08",
+  },
+];
+
+function isBrowser() {
+  return typeof window !== "undefined";
+}
+
+function readTable<T>(key: string, fallback: T): T {
+  if (!isBrowser()) {
+    return fallback;
+  }
+
+  const raw = localStorage.getItem(key);
+  if (!raw) {
+    return fallback;
+  }
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    localStorage.removeItem(key);
+    return fallback;
+  }
+}
+
+function writeTable<T>(key: string, value: T) {
+  if (!isBrowser()) {
+    return;
+  }
+
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function getServiceTable() {
+  const table = readTable<ServiceRecord[]>(DEV_SERVICE_TABLE_KEY, initialServiceTable);
+
+  if (table.length === 0) {
+    writeTable(DEV_SERVICE_TABLE_KEY, initialServiceTable);
+    return [...initialServiceTable];
+  }
+
+  return table;
+}
+
+function setServiceTable(next: ServiceRecord[]) {
+  writeTable(DEV_SERVICE_TABLE_KEY, next);
+}
+
+function getServiceSessionTable() {
+  return readTable<ServiceSessionRecord[]>(DEV_SERVICE_SESSION_TABLE_KEY, []);
+}
+
+function setServiceSessionTable(next: ServiceSessionRecord[]) {
+  writeTable(DEV_SERVICE_SESSION_TABLE_KEY, next);
+}
+
+function createServiceSessionId() {
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).slice(2, 8);
+  return `ssn-${timestamp}-${random}`;
+}
+
+export const devMockServiceDb = {
+  listServices() {
+    return [...getServiceTable()];
+  },
+
+  getServiceById(serviceId: string) {
+    return getServiceTable().find((service) => service.id === serviceId) ?? null;
+  },
+
+  listServiceSessions(serviceId: string) {
+    return getServiceSessionTable()
+      .filter((session) => session.serviceId === serviceId)
+      .sort((a, b) => b.executedAt.localeCompare(a.executedAt));
+  },
+
+  executeService(input: {
+    serviceId: string;
+    executedByUserId: string;
+    executedByName: string;
+  }) {
+    const services = getServiceTable();
+    const target = services.find((service) => service.id === input.serviceId);
+
+    if (!target) {
+      throw new Error("Service not found");
+    }
+
+    const now = new Date();
+    const executedAt = now.toISOString();
+    const serviceSession: ServiceSessionRecord = {
+      id: createServiceSessionId(),
+      serviceId: input.serviceId,
+      executedByUserId: input.executedByUserId,
+      executedByName: input.executedByName,
+      executedAt,
+      result: "success",
+    };
+
+    setServiceSessionTable([serviceSession, ...getServiceSessionTable()]);
+
+    const nextServices = services.map((service) => {
+      if (service.id !== input.serviceId) {
+        return service;
+      }
+
+      return {
+        ...service,
+        updatedAt: executedAt.slice(0, 10),
+      };
+    });
+
+    setServiceTable(nextServices);
+
+    return serviceSession;
+  },
+};

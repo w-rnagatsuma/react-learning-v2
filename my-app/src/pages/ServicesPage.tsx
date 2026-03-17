@@ -94,7 +94,11 @@ export function ServicesPage() {
   };
 
   const handleExecuteService = useCallback((serviceId: string) => {
-    const executionPath = `/services/${encodeURIComponent(serviceId)}/execute`;
+    const executionToken =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const executionPath = `/services/${encodeURIComponent(serviceId)}/execute?executionToken=${encodeURIComponent(executionToken)}`;
     const executionUrl = new URL(executionPath, window.location.origin).toString();
     const windowFeatures = [
       "popup=yes",
