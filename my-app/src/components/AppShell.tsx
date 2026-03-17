@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { BriefcaseBusiness, Home, Menu, Settings2, UserRound } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -14,7 +14,21 @@ const navItems = [
 
 export function AppShell() {
   const { user } = useSession();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.matchMedia("(min-width: 768px)").matches);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 768px)");
+
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsSidebarOpen(event.matches);
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleChange);
+    };
+  }, []);
 
   const initials = user?.name?.slice(0, 2).toUpperCase() ?? "U";
 
@@ -25,7 +39,7 @@ export function AppShell() {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              aria-label="メニューを開く"
+              aria-label={isSidebarOpen ? "メニューを閉じる" : "メニューを開く"}
               className="inline-flex h-9 w-9 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               onClick={() => setIsSidebarOpen((prev) => !prev)}
             >
@@ -69,7 +83,7 @@ export function AppShell() {
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-30 w-56 shrink-0 border-r bg-muted/95 p-4 pt-16 backdrop-blur transition-transform md:static md:z-0 md:translate-x-0 md:bg-muted/30 md:pt-4 md:backdrop-blur-none",
+          "fixed inset-y-0 left-0 z-30 w-56 shrink-0 border-r bg-muted/95 p-4 pt-16 backdrop-blur transition-transform md:top-14 md:h-[calc(100svh-3.5rem)] md:overflow-y-auto md:bg-muted/30 md:pt-4 md:backdrop-blur-none",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
@@ -102,7 +116,12 @@ export function AppShell() {
         </nav>
       </aside>
 
-      <main className="min-w-0 flex-1">
+      <main
+        className={cn(
+          "min-w-0 flex-1 transition-[margin] duration-200",
+          isSidebarOpen ? "md:ml-56" : "md:ml-0",
+        )}
+      >
         <Outlet />
       </main>
       </div>
