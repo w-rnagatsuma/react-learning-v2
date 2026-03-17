@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useServices } from "@/hooks/api/useServices";
 
-type SortKey = "id" | "name" | "category" | "owner" | "status" | "updatedAt";
+type SortKey = "id" | "name" | "category" | "owner" | "updatedAt";
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20] as const;
 
@@ -14,7 +14,6 @@ export function ServicesPage() {
   const services = useMemo(() => data?.services ?? [], [data?.services]);
   const [keyword, setKeyword] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedStatus, setSelectedStatus] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("updatedAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
@@ -22,11 +21,6 @@ export function ServicesPage() {
 
   const categories = useMemo(
     () => Array.from(new Set(services.map((service) => service.category))).sort(),
-    [services],
-  );
-
-  const statuses = useMemo(
-    () => Array.from(new Set(services.map((service) => service.status))),
     [services],
   );
 
@@ -44,12 +38,9 @@ export function ServicesPage() {
       const matchesCategory =
         selectedCategory === "all" || service.category === selectedCategory;
 
-      const matchesStatus =
-        selectedStatus === "all" || service.status === selectedStatus;
-
-      return matchesKeyword && matchesCategory && matchesStatus;
+      return matchesKeyword && matchesCategory;
     });
-  }, [services, keyword, selectedCategory, selectedStatus]);
+  }, [services, keyword, selectedCategory]);
 
   const sortedServices = useMemo(() => {
     const sorted = [...filteredServices].sort((a, b) => {
@@ -139,7 +130,7 @@ export function ServicesPage() {
 
       {!isLoading && !isError ? (
         <div className="space-y-3 rounded-md border bg-muted/20 p-3">
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-1">
               <p className="text-xs font-medium text-muted-foreground">キーワード</p>
               <Input
@@ -171,24 +162,6 @@ export function ServicesPage() {
               </select>
             </div>
 
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">ステータス</p>
-              <select
-                value={selectedStatus}
-                onChange={(event) => {
-                  setSelectedStatus(event.target.value);
-                  setPage(1);
-                }}
-                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                <option value="all">すべて</option>
-                {statuses.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
@@ -242,11 +215,6 @@ export function ServicesPage() {
                 </button>
               </th>
               <th className="whitespace-nowrap px-4 py-3 font-medium">
-                <button type="button" onClick={() => handleSort("status")} className="hover:text-foreground">
-                  ステータス{sortIndicator("status")}
-                </button>
-              </th>
-              <th className="whitespace-nowrap px-4 py-3 font-medium">
                 <button type="button" onClick={() => handleSort("updatedAt")} className="hover:text-foreground">
                   最終更新日{sortIndicator("updatedAt")}
                 </button>
@@ -265,7 +233,6 @@ export function ServicesPage() {
                 <td className="whitespace-nowrap px-4 py-3 font-medium">{service.name}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{service.category}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{service.owner}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{service.status}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{service.updatedAt}</td>
                 <td className="whitespace-nowrap px-4 py-3">
                   <Button

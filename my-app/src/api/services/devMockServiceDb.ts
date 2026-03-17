@@ -1,12 +1,9 @@
-export type ServiceStatus = "稼働中" | "メンテナンス" | "停止中";
-
 export type ServiceRecord = {
   id: string;
   name: string;
   description: string;
   category: string;
   owner: string;
-  status: ServiceStatus;
   updatedAt: string;
 };
 
@@ -23,7 +20,6 @@ export type RecentServiceExecutionRecord = {
   serviceId: string;
   serviceName: string;
   category: string;
-  status: ServiceStatus;
   lastExecutedAt: string;
   lastExecutedByName: string;
   totalExecutions: number;
@@ -39,7 +35,6 @@ const initialServiceTable: ServiceRecord[] = [
     description: "ユーザー登録・認証・権限管理を行う管理対象サービス。",
     category: "認証",
     owner: "運用チームA",
-    status: "稼働中",
     updatedAt: "2026-03-15",
   },
   {
@@ -48,7 +43,6 @@ const initialServiceTable: ServiceRecord[] = [
     description: "カード決済・請求処理を管理する管理対象サービス。",
     category: "決済",
     owner: "業務システム部",
-    status: "メンテナンス",
     updatedAt: "2026-03-12",
   },
   {
@@ -57,7 +51,6 @@ const initialServiceTable: ServiceRecord[] = [
     description: "メール・Push通知配信を管理する管理対象サービス。",
     category: "コミュニケーション",
     owner: "顧客基盤チーム",
-    status: "稼働中",
     updatedAt: "2026-03-10",
   },
   {
@@ -66,7 +59,6 @@ const initialServiceTable: ServiceRecord[] = [
     description: "操作履歴・監査ログを一元管理する管理対象サービス。",
     category: "監査",
     owner: "セキュリティ管理室",
-    status: "停止中",
     updatedAt: "2026-03-08",
   },
 ];
@@ -192,7 +184,6 @@ export const devMockServiceDb = {
         serviceId: service.id,
         serviceName: service.name,
         category: service.category,
-        status: service.status,
         lastExecutedAt: session.executedAt,
         lastExecutedByName: session.executedByName,
         totalExecutions: totalExecutionsByServiceId.get(service.id) ?? 1,

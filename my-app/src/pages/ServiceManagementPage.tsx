@@ -105,7 +105,6 @@ export function ServiceManagementPage() {
                 </CardHeader>
                 <CardContent className="space-y-1.5 text-xs text-slate-700">
                   <p>カテゴリ: {recent.category}</p>
-                  <p>ステータス: {recent.status}</p>
                   <p>最終実行者: {recent.lastExecutedByName}</p>
                   <p>最終実行: {new Date(recent.lastExecutedAt).toLocaleString("ja-JP")}</p>
                   <p className="font-medium text-sky-700">累計実行回数: {recent.totalExecutions}回</p>
