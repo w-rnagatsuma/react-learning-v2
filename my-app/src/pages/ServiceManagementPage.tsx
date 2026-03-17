@@ -3,14 +3,30 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useRecentServiceExecutions } from "@/hooks/api/useRecentServiceExecutions";
+import { useServices } from "@/hooks/api/useServices";
+import { useAllServiceSessions } from "@/hooks/api/useAllServiceSessions";
+import { useDeleteServiceSession } from "@/hooks/api/useDeleteServiceSession";
 
 export function ServiceManagementPage() {
   const { isLoading: isAuthLoading, isAuthenticated } = useRequireAuth();
+  const { data: servicesData } = useServices();
+  const {
+    data: sessionsData,
+    isLoading: isSessionsLoading,
+    isError: isSessionsError,
+  } = useAllServiceSessions();
   const {
     data: recentExecutionsData,
     isLoading: isRecentExecutionsLoading,
     isError: isRecentExecutionsError,
   } = useRecentServiceExecutions(8);
+  const deleteServiceSessionMutation = useDeleteServiceSession();
+
+  const allSessions = useMemo(() => sessionsData?.sessions ?? [], [sessionsData?.sessions]);
+  const servicesById = useMemo(
+    () => new Map((servicesData?.services ?? []).map((service) => [service.id, service] as const)),
+    [servicesData?.services],
+  );
 
   const recentExecutions = useMemo(
     () => recentExecutionsData?.recentExecutions ?? [],
@@ -106,6 +122,85 @@ export function ServiceManagementPage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        ) : null}
+      </section>
+
+      <section className="space-y-3 rounded-md border bg-white p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-800">セッション一覧</h2>
+          <p className="text-xs text-slate-600">最新順</p>
+        </div>
+
+        {isSessionsLoading ? (
+          <p className="text-sm text-slate-600">セッション一覧を読み込み中です...</p>
+        ) : null}
+
+        {isSessionsError ? (
+          <p className="text-sm text-destructive">セッション一覧の取得に失敗しました。</p>
+        ) : null}
+
+        {deleteServiceSessionMutation.isError ? (
+          <p className="text-sm text-destructive">セッションの削除に失敗しました。</p>
+        ) : null}
+
+        {!isSessionsLoading && !isSessionsError && allSessions.length === 0 ? (
+          <p className="text-sm text-slate-600">表示できるセッションはありません。</p>
+        ) : null}
+
+        {!isSessionsLoading && !isSessionsError && allSessions.length > 0 ? (
+          <div className="overflow-x-auto rounded-md border bg-background">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">セッションID</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">サービス名</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">サービスID</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">実行者</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">実行日時</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-medium">削除</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allSessions.map((session, index) => (
+                  <tr
+                    key={session.id}
+                    className={index % 2 === 0 ? "border-t bg-background" : "border-t bg-muted/10"}
+                  >
+                    <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-muted-foreground">
+                      {session.id}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 font-medium">
+                      {servicesById.get(session.serviceId)?.name ?? "不明なサービス"}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3">{session.serviceId}</td>
+                    <td className="whitespace-nowrap px-4 py-3">{session.executedByName}</td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      {new Date(session.executedAt).toLocaleString("ja-JP")}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        disabled={
+                          deleteServiceSessionMutation.isPending &&
+                          deleteServiceSessionMutation.variables === session.id
+                        }
+                        onClick={() => {
+                          deleteServiceSessionMutation.mutate(session.id);
+                        }}
+                      >
+                        {deleteServiceSessionMutation.isPending &&
+                        deleteServiceSessionMutation.variables === session.id
+                          ? "削除中..."
+                          : "削除"}
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : null}
       </section>

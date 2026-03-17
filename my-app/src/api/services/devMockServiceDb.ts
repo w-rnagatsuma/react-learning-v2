@@ -145,6 +145,24 @@ export const devMockServiceDb = {
       .sort((a, b) => b.executedAt.localeCompare(a.executedAt));
   },
 
+  listAllServiceSessions() {
+    return [...getServiceSessionTable()].sort((a, b) => b.executedAt.localeCompare(a.executedAt));
+  },
+
+  deleteServiceSession(sessionId: string) {
+    const sessions = getServiceSessionTable();
+    const target = sessions.find((session) => session.id === sessionId);
+
+    if (!target) {
+      return null;
+    }
+
+    const nextSessions = sessions.filter((session) => session.id !== sessionId);
+    setServiceSessionTable(nextSessions);
+
+    return target;
+  },
+
   listRecentServiceExecutions(limit = 4) {
     const sessions = [...getServiceSessionTable()].sort(
       (a, b) => b.executedAt.localeCompare(a.executedAt),
