@@ -4,7 +4,9 @@ export type ServiceRecord = {
   description: string;
   category: string;
   owner: string;
-  updatedAt: string;
+  lastExecutedAt?: string;
+  lastExecutedByName?: string;
+  totalExecutions?: number;
 };
 
 export type ServiceSessionRecord = {
@@ -35,7 +37,6 @@ const initialServiceTable: ServiceRecord[] = [
     description: "ユーザー登録・認証・権限管理を行う管理対象サービス。",
     category: "認証",
     owner: "運用チームA",
-    updatedAt: "2026-03-15T09:30:00Z",
   },
   {
     id: "svc-002",
@@ -43,7 +44,6 @@ const initialServiceTable: ServiceRecord[] = [
     description: "カード決済・請求処理を管理する管理対象サービス。",
     category: "決済",
     owner: "業務システム部",
-    updatedAt: "2026-03-12T15:10:00Z",
   },
   {
     id: "svc-003",
@@ -51,7 +51,6 @@ const initialServiceTable: ServiceRecord[] = [
     description: "メール・Push通知配信を管理する管理対象サービス。",
     category: "コミュニケーション",
     owner: "顧客基盤チーム",
-    updatedAt: "2026-03-10T11:45:00Z",
   },
   {
     id: "svc-004",
@@ -59,7 +58,6 @@ const initialServiceTable: ServiceRecord[] = [
     description: "操作履歴・監査ログを一元管理する管理対象サービス。",
     category: "監査",
     owner: "セキュリティ管理室",
-    updatedAt: "2026-03-08T08:20:00Z",
   },
 ];
 
@@ -93,7 +91,7 @@ function writeTable<T>(key: string, value: T) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
-function normalizeUpdatedAt(value: string) {
+function normalizeDateTime(value: string) {
   // Keep existing ISO datetime values as-is. Legacy date-only values are expanded.
   if (value.includes("T")) {
     return value;
@@ -112,10 +110,16 @@ function getServiceTable() {
 
   const normalized = table.map((service) => ({
     ...service,
-    updatedAt: normalizeUpdatedAt(service.updatedAt),
+    lastExecutedAt: service.lastExecutedAt ? normalizeDateTime(service.lastExecutedAt) : undefined,
+    totalExecutions: service.totalExecutions ?? 0,
   }));
 
-  const hasLegacyValue = normalized.some((service, index) => service.updatedAt !== table[index]?.updatedAt);
+  const hasLegacyValue = normalized.some((service, index) => {
+    return (
+      service.lastExecutedAt !== table[index]?.lastExecutedAt ||
+      service.totalExecutions !== table[index]?.totalExecutions
+    );
+  });
   if (hasLegacyValue) {
     writeTable(DEV_SERVICE_TABLE_KEY, normalized);
   }
@@ -175,46 +179,18 @@ export const devMockServiceDb = {
   },
 
   listRecentServiceExecutions(limit = 4) {
-    const sessions = [...getServiceSessionTable()].sort(
-      (a, b) => b.executedAt.localeCompare(a.executedAt),
-    );
-    const servicesById = new Map(
-      getServiceTable().map((service) => [service.id, service] as const),
-    );
-    const totalExecutionsByServiceId = sessions.reduce((acc, session) => {
-      const current = acc.get(session.serviceId) ?? 0;
-      acc.set(session.serviceId, current + 1);
-      return acc;
-    }, new Map<string, number>());
-    const recent: RecentServiceExecutionRecord[] = [];
-    const seenServiceIds = new Set<string>();
-
-    for (const session of sessions) {
-      if (seenServiceIds.has(session.serviceId)) {
-        continue;
-      }
-
-      const service = servicesById.get(session.serviceId);
-      if (!service) {
-        continue;
-      }
-
-      recent.push({
+    return getServiceTable()
+      .filter((service) => Boolean(service.lastExecutedAt) && (service.totalExecutions ?? 0) > 0)
+      .sort((a, b) => (b.lastExecutedAt ?? "").localeCompare(a.lastExecutedAt ?? ""))
+      .slice(0, limit)
+      .map((service) => ({
         serviceId: service.id,
         serviceName: service.name,
         category: service.category,
-        lastExecutedAt: session.executedAt,
-        lastExecutedByName: session.executedByName,
-        totalExecutions: totalExecutionsByServiceId.get(service.id) ?? 1,
-      });
-      seenServiceIds.add(session.serviceId);
-
-      if (recent.length >= limit) {
-        break;
-      }
-    }
-
-    return recent;
+        lastExecutedAt: service.lastExecutedAt ?? "",
+        lastExecutedByName: service.lastExecutedByName ?? service.owner,
+        totalExecutions: service.totalExecutions ?? 0,
+      }));
   },
 
   executeService(input: {
@@ -249,7 +225,9 @@ export const devMockServiceDb = {
 
       return {
         ...service,
-        updatedAt: executedAt,
+        lastExecutedAt: executedAt,
+        lastExecutedByName: input.executedByName,
+        totalExecutions: (service.totalExecutions ?? 0) + 1,
       };
     });
 

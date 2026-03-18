@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useServices } from "@/hooks/api/useServices";
 
-type SortKey = "id" | "name" | "category" | "owner" | "updatedAt";
+type SortKey = "id" | "name" | "category" | "owner";
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20] as const;
 
@@ -14,8 +14,8 @@ export function ServicesPage() {
   const services = useMemo(() => data?.services ?? [], [data?.services]);
   const [keyword, setKeyword] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [sortKey, setSortKey] = useState<SortKey>("updatedAt");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [sortKey, setSortKey] = useState<SortKey>("id");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<(typeof PAGE_SIZE_OPTIONS)[number]>(10);
 
@@ -214,11 +214,6 @@ export function ServicesPage() {
                   担当{sortIndicator("owner")}
                 </button>
               </th>
-              <th className="whitespace-nowrap px-4 py-3 font-medium">
-                <button type="button" onClick={() => handleSort("updatedAt")} className="hover:text-foreground">
-                  最終更新日時{sortIndicator("updatedAt")}
-                </button>
-              </th>
               <th className="whitespace-nowrap px-4 py-3 font-medium">実行</th>
             </tr>
           </thead>
@@ -233,7 +228,6 @@ export function ServicesPage() {
                 <td className="whitespace-nowrap px-4 py-3 font-medium">{service.name}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{service.category}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{service.owner}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{service.updatedAt}</td>
                 <td className="whitespace-nowrap px-4 py-3">
                   <Button
                     type="button"
