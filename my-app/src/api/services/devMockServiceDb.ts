@@ -29,6 +29,7 @@ export type RecentServiceExecutionRecord = {
 
 const DEV_SERVICE_TABLE_KEY = "dev_mock_service_table";
 const DEV_SERVICE_SESSION_TABLE_KEY = "dev_mock_service_session_table";
+export const DEV_SERVICE_DB_SYNC_KEY = "dev_mock_service_db_sync_key";
 
 const initialServiceTable: ServiceRecord[] = [
   {
@@ -89,6 +90,14 @@ function writeTable<T>(key: string, value: T) {
   }
 
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function notifyServiceDbChanged() {
+  if (!isBrowser()) {
+    return;
+  }
+
+  localStorage.setItem(DEV_SERVICE_DB_SYNC_KEY, `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
 }
 
 function normalizeDateTime(value: string) {
@@ -174,6 +183,7 @@ export const devMockServiceDb = {
 
     const nextSessions = sessions.filter((session) => session.id !== sessionId);
     setServiceSessionTable(nextSessions);
+    notifyServiceDbChanged();
 
     return target;
   },
@@ -232,6 +242,7 @@ export const devMockServiceDb = {
     });
 
     setServiceTable(nextServices);
+    notifyServiceDbChanged();
 
     return serviceSession;
   },
