@@ -64,7 +64,7 @@
 1. `serviceId` に対応する `service` の存在確認（未存在なら例外）。
 2. 実行時刻 `executedAt` を ISO 形式で生成。
 3. `service_session` に新規レコードを先頭追加。
-4. 対象 `service.updatedAt` を実行日で更新。
+4. 対象 `service.updatedAt` を実行日時で更新。
 5. 追加したセッションレコードを返却。
 
 ## React Query 連携

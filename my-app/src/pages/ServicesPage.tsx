@@ -216,7 +216,7 @@ export function ServicesPage() {
               </th>
               <th className="whitespace-nowrap px-4 py-3 font-medium">
                 <button type="button" onClick={() => handleSort("updatedAt")} className="hover:text-foreground">
-                  最終更新日{sortIndicator("updatedAt")}
+                  最終更新日時{sortIndicator("updatedAt")}
                 </button>
               </th>
               <th className="whitespace-nowrap px-4 py-3 font-medium">実行</th>

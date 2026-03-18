@@ -35,7 +35,7 @@ const initialServiceTable: ServiceRecord[] = [
     description: "ユーザー登録・認証・権限管理を行う管理対象サービス。",
     category: "認証",
     owner: "運用チームA",
-    updatedAt: "2026-03-15",
+    updatedAt: "2026-03-15T09:30:00Z",
   },
   {
     id: "svc-002",
@@ -43,7 +43,7 @@ const initialServiceTable: ServiceRecord[] = [
     description: "カード決済・請求処理を管理する管理対象サービス。",
     category: "決済",
     owner: "業務システム部",
-    updatedAt: "2026-03-12",
+    updatedAt: "2026-03-12T15:10:00Z",
   },
   {
     id: "svc-003",
@@ -51,7 +51,7 @@ const initialServiceTable: ServiceRecord[] = [
     description: "メール・Push通知配信を管理する管理対象サービス。",
     category: "コミュニケーション",
     owner: "顧客基盤チーム",
-    updatedAt: "2026-03-10",
+    updatedAt: "2026-03-10T11:45:00Z",
   },
   {
     id: "svc-004",
@@ -59,7 +59,7 @@ const initialServiceTable: ServiceRecord[] = [
     description: "操作履歴・監査ログを一元管理する管理対象サービス。",
     category: "監査",
     owner: "セキュリティ管理室",
-    updatedAt: "2026-03-08",
+    updatedAt: "2026-03-08T08:20:00Z",
   },
 ];
 
@@ -93,6 +93,15 @@ function writeTable<T>(key: string, value: T) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function normalizeUpdatedAt(value: string) {
+  // Keep existing ISO datetime values as-is. Legacy date-only values are expanded.
+  if (value.includes("T")) {
+    return value;
+  }
+
+  return `${value}T00:00:00Z`;
+}
+
 function getServiceTable() {
   const table = readTable<ServiceRecord[]>(DEV_SERVICE_TABLE_KEY, initialServiceTable);
 
@@ -101,7 +110,17 @@ function getServiceTable() {
     return [...initialServiceTable];
   }
 
-  return table;
+  const normalized = table.map((service) => ({
+    ...service,
+    updatedAt: normalizeUpdatedAt(service.updatedAt),
+  }));
+
+  const hasLegacyValue = normalized.some((service, index) => service.updatedAt !== table[index]?.updatedAt);
+  if (hasLegacyValue) {
+    writeTable(DEV_SERVICE_TABLE_KEY, normalized);
+  }
+
+  return normalized;
 }
 
 function setServiceTable(next: ServiceRecord[]) {
@@ -230,7 +249,7 @@ export const devMockServiceDb = {
 
       return {
         ...service,
-        updatedAt: executedAt.slice(0, 10),
+        updatedAt: executedAt,
       };
     });
 
