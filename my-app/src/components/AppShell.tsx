@@ -8,11 +8,11 @@ import { useSession } from "@/api/session/useSession";
 const navItems = [
   { to: "/", label: "ホーム", icon: Home, end: true },
   { to: "/services", label: "サービス一覧", icon: BriefcaseBusiness, end: true },
-  { to: "/service-management", label: "サービス管理", icon: Settings2, end: true },
+  { to: "/session-management", label: "セッション管理", icon: Settings2, end: true },
   { to: "/profile", label: "プロフィール", icon: UserRound, end: false },
 ] as const;
 
-const dividerAfterPaths = new Set(["/", "/service-management"]);
+const dividerAfterPaths = new Set(["/", "/session-management"]);
 
 export function AppShell() {
   const { user } = useSession();

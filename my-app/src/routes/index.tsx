@@ -4,7 +4,7 @@ import { LoginPage } from "@/pages/LoginPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { ServicesPage } from "@/pages/ServicesPage";
 import { ServiceDetailPage } from "@/pages/ServiceDetailPage";
-import { ServiceManagementPage } from "@/pages/ServiceManagementPage";
+import { SessionManagementPage } from "@/pages/SessionManagementPage";
 import { ServiceExecutionPage } from "@/pages/ServiceExecutionPage";
 import { AppShell } from "@/components/AppShell";
 
@@ -38,8 +38,8 @@ export const router = createBrowserRouter([
         element: <ServiceDetailPage />,
       },
       {
-        path: "service-management",
-        element: <ServiceManagementPage />,
+        path: "session-management",
+        element: <SessionManagementPage />,
       },
     ],
   },
