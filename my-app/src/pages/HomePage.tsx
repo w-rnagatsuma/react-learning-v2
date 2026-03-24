@@ -1,5 +1,6 @@
 import { useSession } from "@/api/session/useSession";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { Link } from "react-router-dom";
 
 export function HomePage() {
   const { isLoading, isAuthenticated } = useRequireAuth();
@@ -19,6 +20,9 @@ export function HomePage() {
       <p>ログイン済みです</p>
       <p>name: {user?.name}</p>
       <p>email: {user?.email}</p>
+      <Link to="/services" className="text-blue-600 underline hover:text-blue-700">
+        サービス一覧へ
+      </Link>
     </div>
   );
 }
