@@ -12,6 +12,8 @@ const navItems = [
   { to: "/profile", label: "プロフィール", icon: UserRound, end: false },
 ] as const;
 
+const dividerAfterPaths = new Set(["/", "/service-management"]);
+
 export function AppShell() {
   const { user } = useSession();
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.matchMedia("(min-width: 768px)").matches);
@@ -91,22 +93,27 @@ export function AppShell() {
             const Icon = item.icon;
 
             return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                  )
-                }
-              >
-                <Icon className="h-4 w-4" />
-                <span>{item.label}</span>
-              </NavLink>
+              <div key={item.to}>
+                <NavLink
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                    )
+                  }
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </NavLink>
+
+                {dividerAfterPaths.has(item.to) ? (
+                  <div aria-hidden="true" className="my-2 border-t border-border" />
+                ) : null}
+              </div>
             );
           })}
         </nav>
