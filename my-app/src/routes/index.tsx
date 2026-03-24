@@ -6,6 +6,9 @@ import { ServicesPage } from "@/pages/ServicesPage";
 import { ServiceDetailPage } from "@/pages/ServiceDetailPage";
 import { SessionManagementPage } from "@/pages/SessionManagementPage";
 import { ServiceExecutionPage } from "@/pages/ServiceExecutionPage";
+import { ServiceTestPage } from "@/pages/ServiceTestPage";
+import { ServiceImagePage } from "@/pages/ServiceImagePage";
+import { ServiceFlowDiagramPage } from "@/pages/ServiceFlowDiagramPage";
 import { AppShell } from "@/components/AppShell";
 
 export const router = createBrowserRouter([
@@ -36,6 +39,18 @@ export const router = createBrowserRouter([
       {
         path: "services/:serviceId",
         element: <ServiceDetailPage />,
+      },
+      {
+        path: "services/:serviceId/test",
+        element: <ServiceTestPage />,
+      },
+      {
+        path: "services/:serviceId/image",
+        element: <ServiceImagePage />,
+      },
+      {
+        path: "services/:serviceId/flow-diagram",
+        element: <ServiceFlowDiagramPage />,
       },
       {
         path: "session-management",
