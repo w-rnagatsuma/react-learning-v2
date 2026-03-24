@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
@@ -224,7 +225,14 @@ export function ServicesPage() {
                 key={service.id}
                 className={index % 2 === 0 ? "border-t bg-background hover:bg-accent/40" : "border-t bg-muted/20 hover:bg-accent/40"}
               >
-                <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-muted-foreground">{service.id}</td>
+                <td className="whitespace-nowrap px-4 py-3 font-mono text-xs">
+                  <Link
+                    to={`/services/${encodeURIComponent(service.id)}`}
+                    className="text-sky-700 underline-offset-2 hover:underline"
+                  >
+                    {service.id}
+                  </Link>
+                </td>
                 <td className="whitespace-nowrap px-4 py-3 font-medium">{service.name}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{service.category}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{service.owner}</td>
