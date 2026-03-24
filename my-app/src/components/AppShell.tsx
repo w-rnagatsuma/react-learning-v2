@@ -1,21 +1,34 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
-import { BriefcaseBusiness, Home, Menu, Settings2, UserRound } from "lucide-react";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { BriefcaseBusiness, FileText, GitGraph, Home, Image, Menu, Settings2, UserRound } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSession } from "@/api/session/useSession";
 
-const navItems = [
+const baseNavItems = [
   { to: "/", label: "ホーム", icon: Home, end: true },
   { to: "/services", label: "サービス一覧", icon: BriefcaseBusiness, end: true },
   { to: "/session-management", label: "セッション管理", icon: Settings2, end: true },
-  { to: "/profile", label: "プロフィール", icon: UserRound, end: false },
 ] as const;
 
-const dividerAfterPaths = new Set(["/", "/session-management"]);
+const profileNavItem = { to: "/profile", label: "プロフィール", icon: UserRound, end: false } as const;
+
+function getSelectedServiceId(pathname: string) {
+  const matched = pathname.match(/^\/services\/([^/]+)(?:\/.*)?$/);
+  if (!matched) {
+    return null;
+  }
+
+  try {
+    return decodeURIComponent(matched[1]);
+  } catch {
+    return matched[1];
+  }
+}
 
 export function AppShell() {
   const { user } = useSession();
+  const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.matchMedia("(min-width: 768px)").matches);
 
   useEffect(() => {
@@ -33,6 +46,22 @@ export function AppShell() {
   }, []);
 
   const initials = user?.name?.slice(0, 2).toUpperCase() ?? "U";
+  const selectedServiceId = getSelectedServiceId(location.pathname);
+  const encodedServiceId = selectedServiceId ? encodeURIComponent(selectedServiceId) : null;
+
+  const serviceNavItems = encodedServiceId
+    ? [
+        { to: `/services/${encodedServiceId}/test`, label: "テスト", icon: FileText, end: true },
+        { to: `/services/${encodedServiceId}/image`, label: "イメージ", icon: Image, end: true },
+        { to: `/services/${encodedServiceId}/flow-diagram`, label: "画面遷移図", icon: GitGraph, end: true },
+      ]
+    : [];
+
+  const navItems = [...baseNavItems, ...serviceNavItems, profileNavItem];
+  const dividerAfterPaths = new Set([
+    "/",
+    serviceNavItems.length > 0 ? serviceNavItems[serviceNavItems.length - 1].to : "/session-management",
+  ]);
 
   return (
     <div className="relative flex min-h-svh flex-col text-left">
