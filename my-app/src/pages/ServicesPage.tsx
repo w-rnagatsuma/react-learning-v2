@@ -1,22 +1,90 @@
 import { useCallback, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { format } from "date-fns";
+import { ja } from "date-fns/locale";
+import { CalendarIcon, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon } from "@/components/ui/input-group";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useServices } from "@/hooks/api/useServices";
 
 type SortKey = "id" | "name" | "category" | "owner";
 
+type ServiceFilters = {
+  categories: string[];
+  owners: string[];
+  executedFrom?: string;
+  executedTo?: string;
+};
+
 const PAGE_SIZE_OPTIONS = [5, 10, 20] as const;
+
+const createEmptyFilters = (): ServiceFilters => ({
+  categories: [],
+  owners: [],
+});
+
+const countActiveFilters = (filters: ServiceFilters) => {
+  return (
+    filters.categories.length +
+    filters.owners.length +
+    (filters.executedFrom ? 1 : 0) +
+    (filters.executedTo ? 1 : 0)
+  );
+};
+
+const normalizeDateRange = (filters: ServiceFilters): ServiceFilters => {
+  if (filters.executedFrom && filters.executedTo && filters.executedFrom > filters.executedTo) {
+    return {
+      ...filters,
+      executedFrom: filters.executedTo,
+      executedTo: filters.executedFrom,
+    };
+  }
+
+  return filters;
+};
+
+const isSameFilterState = (left: ServiceFilters, right: ServiceFilters) => {
+  return (
+    left.executedFrom === right.executedFrom &&
+    left.executedTo === right.executedTo &&
+    left.categories.length === right.categories.length &&
+    left.owners.length === right.owners.length &&
+    left.categories.every((value, index) => value === right.categories[index]) &&
+    left.owners.every((value, index) => value === right.owners[index])
+  );
+};
+
+const toDateValue = (date?: Date) => (date ? format(date, "yyyy-MM-dd") : undefined);
+
+const toDateObject = (value?: string) => {
+  if (!value) {
+    return undefined;
+  }
+
+  return new Date(`${value}T00:00:00`);
+};
+
+const toDateLabel = (value?: string) => {
+  if (!value) {
+    return "日付を選択";
+  }
+
+  return format(new Date(`${value}T00:00:00`), "yyyy/MM/dd", { locale: ja });
+};
 
 export function ServicesPage() {
   const { isLoading: isAuthLoading, isAuthenticated } = useRequireAuth();
   const { data, isLoading, isError } = useServices();
   const services = useMemo(() => data?.services ?? [], [data?.services]);
   const [keyword, setKeyword] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState<ServiceFilters>(() => createEmptyFilters());
+  const [draftFilters, setDraftFilters] = useState<ServiceFilters>(() => createEmptyFilters());
   const [sortKey, setSortKey] = useState<SortKey>("id");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(1);
@@ -26,9 +94,22 @@ export function ServicesPage() {
     () => Array.from(new Set(services.map((service) => service.category))).sort(),
     [services],
   );
+  const owners = useMemo(
+    () => Array.from(new Set(services.map((service) => service.owner))).sort(),
+    [services],
+  );
+
+  const appliedFilterCount = useMemo(() => countActiveFilters(appliedFilters), [appliedFilters]);
+  const draftFilterCount = useMemo(() => countActiveFilters(draftFilters), [draftFilters]);
+  const hasPendingDraft = useMemo(
+    () => !isSameFilterState(draftFilters, appliedFilters),
+    [draftFilters, appliedFilters],
+  );
+  const unappliedDraftCount = hasPendingDraft ? draftFilterCount : 0;
 
   const filteredServices = useMemo(() => {
     const normalizedKeyword = keyword.trim().toLowerCase();
+    const normalizedFilters = normalizeDateRange(appliedFilters);
 
     return services.filter((service) => {
       const matchesKeyword =
@@ -39,11 +120,30 @@ export function ServicesPage() {
         service.owner.toLowerCase().includes(normalizedKeyword);
 
       const matchesCategory =
-        selectedCategory === "all" || service.category === selectedCategory;
+        normalizedFilters.categories.length === 0 ||
+        normalizedFilters.categories.includes(service.category);
 
-      return matchesKeyword && matchesCategory;
+      const matchesOwner =
+        normalizedFilters.owners.length === 0 ||
+        normalizedFilters.owners.includes(service.owner);
+
+      const executedDate = service.lastExecutedAt?.slice(0, 10);
+      const matchesExecutedFrom =
+        !normalizedFilters.executedFrom ||
+        (executedDate ? executedDate >= normalizedFilters.executedFrom : false);
+      const matchesExecutedTo =
+        !normalizedFilters.executedTo ||
+        (executedDate ? executedDate <= normalizedFilters.executedTo : false);
+
+      return (
+        matchesKeyword &&
+        matchesCategory &&
+        matchesOwner &&
+        matchesExecutedFrom &&
+        matchesExecutedTo
+      );
     });
-  }, [services, keyword, selectedCategory]);
+  }, [services, keyword, appliedFilters]);
 
   const sortedServices = useMemo(() => {
     const sorted = [...filteredServices].sort((a, b) => {
@@ -86,6 +186,42 @@ export function ServicesPage() {
     setPageSize(nextPageSize);
     setPage(1);
   };
+
+  const handleToggleDraftValue = useCallback(
+    (key: "categories" | "owners", value: string) => {
+      setDraftFilters((prev) => {
+        const hasValue = prev[key].includes(value);
+        const nextValues = hasValue
+          ? prev[key].filter((item) => item !== value)
+          : [...prev[key], value].sort((a, b) => a.localeCompare(b, "ja"));
+
+        return {
+          ...prev,
+          [key]: nextValues,
+        };
+      });
+    },
+    [],
+  );
+
+  const handleResetDraftFilters = useCallback(() => {
+    setDraftFilters(createEmptyFilters());
+  }, []);
+
+  const handleApplyDraftFilters = useCallback(() => {
+    const nextApplied = normalizeDateRange(draftFilters);
+    setAppliedFilters(nextApplied);
+    setDraftFilters(nextApplied);
+    setPage(1);
+    setIsFilterPopoverOpen(false);
+  }, [draftFilters]);
+
+  const handleResetAppliedFilters = useCallback(() => {
+    const emptyFilters = createEmptyFilters();
+    setAppliedFilters(emptyFilters);
+    setDraftFilters(emptyFilters);
+    setPage(1);
+  }, []);
 
   const createExecutionPath = useCallback((serviceId: string) => {
     const executionToken =
@@ -133,28 +269,6 @@ export function ServicesPage() {
 
       {!isLoading && !isError ? (
         <div className="space-y-3 rounded-md border bg-muted/20 p-3">
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">カテゴリ</p>
-              <select
-                value={selectedCategory}
-                onChange={(event) => {
-                  setSelectedCategory(event.target.value);
-                  setPage(1);
-                }}
-                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                <option value="all">すべて</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-          </div>
-
           <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
             <p>
               全{services.length}件中 {sortedServices.length}件を表示 / {currentPage}ページ目
@@ -181,8 +295,8 @@ export function ServicesPage() {
         </div>
       ) : null}
 
-      <div className="flex items-center justify-end">
-        <div className="w-full max-w-sm">
+      <div className="flex flex-wrap items-start justify-end gap-2">
+        <div className="w-full min-w-[240px] flex-1 md:max-w-sm">
           <InputGroup>
             <InputGroupAddon>
               <Search className="size-4" aria-hidden="true" />
@@ -199,6 +313,170 @@ export function ServicesPage() {
             />
           </InputGroup>
         </div>
+
+        <Popover open={isFilterPopoverOpen} onOpenChange={setIsFilterPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button type="button" variant={appliedFilterCount > 0 ? "default" : "outline"} className="relative">
+              フィルター
+              {appliedFilterCount > 0 ? (
+                <span className="absolute -top-2 -right-2 inline-flex size-5 items-center justify-center rounded-full bg-sky-600 text-[11px] font-semibold text-white">
+                  {appliedFilterCount}
+                </span>
+              ) : null}
+            </Button>
+          </PopoverTrigger>
+
+          <PopoverContent
+            align="end"
+            className="w-[min(94vw,720px)] p-0"
+            onInteractOutside={(event) => {
+              const target = event.target as HTMLElement | null;
+              if (target?.closest('[data-slot="popover-content"]')) {
+                event.preventDefault();
+              }
+            }}
+          >
+            <div className="space-y-4 p-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-medium text-muted-foreground">カテゴリ</p>
+                    {draftFilters.categories.length > 0 ? (
+                      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-sky-100 px-1.5 text-[11px] font-semibold text-sky-700">
+                        {draftFilters.categories.length}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="max-h-32 space-y-1 overflow-y-auto rounded-lg border bg-background p-2">
+                    {categories.map((category) => {
+                      const checked = draftFilters.categories.includes(category);
+                      return (
+                        <label key={category} className="flex cursor-pointer items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => handleToggleDraftValue("categories", category)}
+                            className="size-4 rounded border-input text-sky-600 focus-visible:ring-2 focus-visible:ring-ring/50"
+                          />
+                          <span>{category}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-medium text-muted-foreground">担当</p>
+                    {draftFilters.owners.length > 0 ? (
+                      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-sky-100 px-1.5 text-[11px] font-semibold text-sky-700">
+                        {draftFilters.owners.length}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="max-h-32 space-y-1 overflow-y-auto rounded-lg border bg-background p-2">
+                    {owners.map((owner) => {
+                      const checked = draftFilters.owners.includes(owner);
+                      return (
+                        <label key={owner} className="flex cursor-pointer items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => handleToggleDraftValue("owners", owner)}
+                            className="size-4 rounded border-input text-sky-600 focus-visible:ring-2 focus-visible:ring-ring/50"
+                          />
+                          <span>{owner}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-medium text-muted-foreground">最終実行日 (開始)</p>
+                    {draftFilters.executedFrom ? (
+                      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-sky-100 px-1.5 text-[11px] font-semibold text-sky-700">
+                        1
+                      </span>
+                    ) : null}
+                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button type="button" variant="outline" className="w-full justify-between font-normal">
+                        {toDateLabel(draftFilters.executedFrom)}
+                        <CalendarIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={toDateObject(draftFilters.executedFrom)}
+                        onSelect={(date: Date | undefined) => {
+                          setDraftFilters((prev) => ({
+                            ...prev,
+                            executedFrom: toDateValue(date),
+                          }));
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-medium text-muted-foreground">最終実行日 (終了)</p>
+                    {draftFilters.executedTo ? (
+                      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-sky-100 px-1.5 text-[11px] font-semibold text-sky-700">
+                        1
+                      </span>
+                    ) : null}
+                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button type="button" variant="outline" className="w-full justify-between font-normal">
+                        {toDateLabel(draftFilters.executedTo)}
+                        <CalendarIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={toDateObject(draftFilters.executedTo)}
+                        onSelect={(date: Date | undefined) => {
+                          setDraftFilters((prev) => ({
+                            ...prev,
+                            executedTo: toDateValue(date),
+                          }));
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between border-t bg-muted/30 p-3">
+              <Button type="button" variant="ghost" onClick={handleResetDraftFilters}>
+                リセット
+              </Button>
+              <Button type="button" onClick={handleApplyDraftFilters} className="relative">
+                {unappliedDraftCount > 0 ? (
+                  <span className="absolute -top-2 -left-2 inline-flex size-5 items-center justify-center rounded-full bg-sky-600 text-[11px] font-semibold text-white">
+                    {unappliedDraftCount}
+                  </span>
+                ) : null}
+                適用
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {appliedFilterCount > 0 ? (
+          <Button type="button" variant="ghost" onClick={handleResetAppliedFilters}>
+            リセット
+          </Button>
+        ) : null}
       </div>
 
       <div className="overflow-x-auto rounded-md border bg-background">
