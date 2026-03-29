@@ -175,7 +175,23 @@ export function SessionManagementPage() {
                     <td className="whitespace-nowrap px-4 py-3">{session.serviceId}</td>
                     <td className="whitespace-nowrap px-4 py-3">{session.executedByName}</td>
                     <td className="whitespace-nowrap px-4 py-3">
-                      {new Date(session.executedAt).toLocaleString("ja-JP")}
+                      <div className="leading-tight">
+                        <div>
+                          {new Date(session.executedAt).toLocaleDateString("ja-JP", {
+                            year: "numeric",
+                            month: "2-digit",
+                            day: "2-digit",
+                          })}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(session.executedAt).toLocaleTimeString("ja-JP", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                            hour12: false,
+                          })}
+                        </div>
+                      </div>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
                       <Button

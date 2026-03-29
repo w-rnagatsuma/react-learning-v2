@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
@@ -6,6 +7,28 @@ import { useRecentServiceExecutions } from "@/hooks/api/useRecentServiceExecutio
 import { useServices } from "@/hooks/api/useServices";
 import { useAllServiceSessions } from "@/hooks/api/useAllServiceSessions";
 import { useDeleteServiceSession } from "@/hooks/api/useDeleteServiceSession";
+
+type ExecutedAtDisplay = {
+  date: string;
+  time: string;
+};
+
+function formatExecutedAtDisplay(executedAt: string, isEnglishLocale: boolean): ExecutedAtDisplay {
+  const dateTimeFormat = isEnglishLocale ? "MMM d, yyyy, HH:mm:ss" : "yyyy/MM/dd HH:mm:ss";
+  const formattedExecutedAt = format(new Date(executedAt), dateTimeFormat);
+
+  if (isEnglishLocale) {
+    const splitSeparator = ", ";
+    const splitIndex = formattedExecutedAt.lastIndexOf(splitSeparator);
+    return {
+      date: splitIndex >= 0 ? formattedExecutedAt.slice(0, splitIndex) : formattedExecutedAt,
+      time: splitIndex >= 0 ? formattedExecutedAt.slice(splitIndex + splitSeparator.length) : "",
+    };
+  }
+
+  const [date, time = ""] = formattedExecutedAt.split(" ");
+  return { date, time };
+}
 
 export function SessionManagementPage() {
   const { isLoading: isAuthLoading, isAuthenticated } = useRequireAuth();
@@ -31,6 +54,10 @@ export function SessionManagementPage() {
   const recentExecutions = useMemo(
     () => recentExecutionsData?.recentExecutions ?? [],
     [recentExecutionsData?.recentExecutions],
+  );
+  const isEnglishLocale = useMemo(
+    () => typeof navigator !== "undefined" && navigator.language.toLowerCase().startsWith("en"),
+    [],
   );
 
   const createExecutionPath = useCallback((serviceId: string) => {
@@ -161,43 +188,53 @@ export function SessionManagementPage() {
                 </tr>
               </thead>
               <tbody>
-                {allSessions.map((session, index) => (
-                  <tr
-                    key={session.id}
-                    className={index % 2 === 0 ? "border-t bg-background" : "border-t bg-muted/10"}
-                  >
-                    <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-muted-foreground">
-                      {session.id}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 font-medium">
-                      {servicesById.get(session.serviceId)?.name ?? "不明なサービス"}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3">{session.serviceId}</td>
-                    <td className="whitespace-nowrap px-4 py-3">{session.executedByName}</td>
-                    <td className="whitespace-nowrap px-4 py-3">
-                      {new Date(session.executedAt).toLocaleString("ja-JP")}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="destructive"
-                        disabled={
-                          deleteServiceSessionMutation.isPending &&
+                {allSessions.map((session, index) => {
+                  const { date: executedDate, time: executedTime } = formatExecutedAtDisplay(
+                    session.executedAt,
+                    isEnglishLocale,
+                  );
+
+                  return (
+                    <tr
+                      key={session.id}
+                      className={index % 2 === 0 ? "border-t bg-background" : "border-t bg-muted/10"}
+                    >
+                      <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-muted-foreground">
+                        {session.id}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 font-medium">
+                        {servicesById.get(session.serviceId)?.name ?? "不明なサービス"}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3">{session.serviceId}</td>
+                      <td className="whitespace-nowrap px-4 py-3">{session.executedByName}</td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <div className="leading-tight">
+                          <div>{executedDate}</div>
+                          <div className="text-xs text-muted-foreground">{executedTime}</div>
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="destructive"
+                          disabled={
+                            deleteServiceSessionMutation.isPending &&
+                            deleteServiceSessionMutation.variables === session.id
+                          }
+                          onClick={() => {
+                            deleteServiceSessionMutation.mutate(session.id);
+                          }}
+                        >
+                          {deleteServiceSessionMutation.isPending &&
                           deleteServiceSessionMutation.variables === session.id
-                        }
-                        onClick={() => {
-                          deleteServiceSessionMutation.mutate(session.id);
-                        }}
-                      >
-                        {deleteServiceSessionMutation.isPending &&
-                        deleteServiceSessionMutation.variables === session.id
-                          ? "削除中..."
-                          : "削除"}
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                            ? "削除中..."
+                            : "削除"}
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

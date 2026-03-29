@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { BriefcaseBusiness, FileText, GitGraph, Home, Image, Menu, Settings2, UserRound } from "lucide-react";
+import { AppWindow, BarChart3, BriefcaseBusiness, ChevronDown, FileText, GitGraph, Home, Image, Menu, Settings2, ShieldCheck, UserRound } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSession } from "@/api/session/useSession";
+import { useServices } from "@/hooks/api/useServices";
 
 const baseNavItems = [
   { to: "/", label: "ホーム", icon: Home, end: true },
@@ -28,8 +29,11 @@ function getSelectedServiceId(pathname: string) {
 
 export function AppShell() {
   const { user } = useSession();
+  const { data: servicesData } = useServices();
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.matchMedia("(min-width: 768px)").matches);
+  const [isServiceSettingsOpen, setIsServiceSettingsOpen] = useState(true);
+  const [isServiceInsightsOpen, setIsServiceInsightsOpen] = useState(true);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 768px)");
@@ -48,6 +52,9 @@ export function AppShell() {
   const initials = user?.name?.slice(0, 2).toUpperCase() ?? "U";
   const selectedServiceId = getSelectedServiceId(location.pathname);
   const encodedServiceId = selectedServiceId ? encodeURIComponent(selectedServiceId) : null;
+  const selectedServiceName = selectedServiceId
+    ? servicesData?.services.find((service) => service.id === selectedServiceId)?.name
+    : null;
 
   const serviceNavItems = encodedServiceId
     ? [
@@ -57,7 +64,8 @@ export function AppShell() {
       ]
     : [];
 
-  const navItems = [...baseNavItems, ...serviceNavItems, profileNavItem];
+  const navItems = [...baseNavItems, ...serviceNavItems];
+  const firstServiceNavPath = serviceNavItems[0]?.to;
   const dividerAfterPaths = new Set([
     "/",
     serviceNavItems.length > 0 ? serviceNavItems[serviceNavItems.length - 1].to : "/session-management",
@@ -120,9 +128,18 @@ export function AppShell() {
         <nav className="space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
+            const shouldShowServiceLabel = Boolean(firstServiceNavPath && item.to === firstServiceNavPath && selectedServiceId);
+            const serviceLabel = selectedServiceName ?? selectedServiceId;
 
             return (
               <div key={item.to}>
+                {shouldShowServiceLabel ? (
+                  <div className="mb-2 flex items-center gap-2 rounded-md bg-black px-3 py-2 text-sm font-medium text-white">
+                    <AppWindow className="h-4 w-4 shrink-0" />
+                    <p className="truncate" title={serviceLabel ?? undefined}>{serviceLabel}</p>
+                  </div>
+                ) : null}
+
                 <NavLink
                   to={item.to}
                   end={item.end}
@@ -145,6 +162,77 @@ export function AppShell() {
               </div>
             );
           })}
+
+          <section className="my-3 rounded-md border border-border bg-background/80 p-3">
+            <p className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground">管理者メニュー</p>
+
+            <div className="space-y-2 text-sm">
+              <div>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 rounded px-1 py-1 text-left font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  aria-expanded={isServiceSettingsOpen}
+                  onClick={() => setIsServiceSettingsOpen((prev) => !prev)}
+                >
+                  <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                  <span className="flex-1">サービス設定</span>
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 text-muted-foreground transition-transform",
+                      isServiceSettingsOpen ? "rotate-180" : "rotate-0",
+                    )}
+                  />
+                </button>
+
+                {isServiceSettingsOpen ? (
+                  <ul className="mt-1 space-y-1 pl-6 text-muted-foreground">
+                    <li>アクセス管理</li>
+                    <li>ログ管理</li>
+                  </ul>
+                ) : null}
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 rounded px-1 py-1 text-left font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  aria-expanded={isServiceInsightsOpen}
+                  onClick={() => setIsServiceInsightsOpen((prev) => !prev)}
+                >
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                  <span className="flex-1">サービスインサイト</span>
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 text-muted-foreground transition-transform",
+                      isServiceInsightsOpen ? "rotate-180" : "rotate-0",
+                    )}
+                  />
+                </button>
+
+                {isServiceInsightsOpen ? (
+                  <ul className="mt-1 space-y-1 pl-6 text-muted-foreground">
+                    <li>ストレージインサイト</li>
+                  </ul>
+                ) : null}
+              </div>
+            </div>
+          </section>
+
+          <NavLink
+            to={profileNavItem.to}
+            end={profileNavItem.end}
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+              )
+            }
+          >
+            <profileNavItem.icon className="h-4 w-4" />
+            <span>{profileNavItem.label}</span>
+          </NavLink>
         </nav>
       </aside>
 
