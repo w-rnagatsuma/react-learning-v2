@@ -1,7 +1,9 @@
 import { useCallback, useMemo, useState } from "react";
+import { Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon } from "@/components/ui/input-group";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useServices } from "@/hooks/api/useServices";
 
@@ -133,18 +135,6 @@ export function ServicesPage() {
         <div className="space-y-3 rounded-md border bg-muted/20 p-3">
           <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">キーワード</p>
-              <Input
-                value={keyword}
-                onChange={(event) => {
-                  setKeyword(event.target.value);
-                  setPage(1);
-                }}
-                placeholder="ID・サービス名・説明・担当で検索"
-              />
-            </div>
-
-            <div className="space-y-1">
               <p className="text-xs font-medium text-muted-foreground">カテゴリ</p>
               <select
                 value={selectedCategory}
@@ -190,6 +180,26 @@ export function ServicesPage() {
           </div>
         </div>
       ) : null}
+
+      <div className="flex items-center justify-end">
+        <div className="w-full max-w-sm">
+          <InputGroup>
+            <InputGroupAddon>
+              <Search className="size-4" aria-hidden="true" />
+            </InputGroupAddon>
+            <Input
+              value={keyword}
+              onChange={(event) => {
+                setKeyword(event.target.value);
+                setPage(1);
+              }}
+              placeholder="テキスト検索 (部分一致)"
+              className="pl-8"
+              aria-label="サービス一覧のテキスト検索"
+            />
+          </InputGroup>
+        </div>
+      </div>
 
       <div className="overflow-x-auto rounded-md border bg-background">
         <table className="min-w-full text-left text-sm">
