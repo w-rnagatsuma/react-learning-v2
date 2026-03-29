@@ -11,34 +11,15 @@ export function ServicesPage() {
   const { isLoading: isAuthLoading, isAuthenticated } = useRequireAuth();
   const { data, isLoading, isError } = useServices();
   const services = useMemo(() => data?.services ?? [], [data?.services]);
+
   const {
-    categories,
-    owners,
-    keyword,
-    handleKeywordChange,
-    isFilterPopoverOpen,
-    setIsFilterPopoverOpen,
-    draftFilters,
-    appliedFilterCount,
-    unappliedDraftCount,
-    handleToggleDraftValue,
-    handleDraftExecutedFromChange,
-    handleDraftExecutedToChange,
-    handleResetDraftFilters,
-    handleApplyDraftFilters,
-    handleResetAppliedFilters,
-    sortIndicator,
-    handleSort,
-    pageSize,
-    handlePageSizeChange,
-    totalPages,
-    currentPage,
-    pagedServices,
-    sortedServices,
-    goToPrevPage,
-    goToNextPage,
-    goToPage,
-    handleExecuteService,
+    filters,
+    filterActions,
+    table,
+    tableActions,
+    pagination,
+    paginationActions,
+    counts,
   } = useServicesPageState(services);
 
   if (isAuthLoading) {
@@ -65,7 +46,7 @@ export function ServicesPage() {
         <div className="space-y-3 rounded-md border bg-muted/20 p-3">
           <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
             <p>
-              全{services.length}件中 {sortedServices.length}件を表示 / {currentPage}ページ目
+              全{counts.totalServices}件中 {counts.visibleServices}件を表示 / {pagination.currentPage}ページ目
             </p>
 
             <div className="flex items-center gap-2">
@@ -74,8 +55,12 @@ export function ServicesPage() {
               </label>
               <select
                 id="page-size"
-                value={pageSize}
-                onChange={(event) => handlePageSizeChange(Number(event.target.value) as (typeof PAGE_SIZE_OPTIONS)[number])}
+                value={pagination.pageSize}
+                onChange={(event) =>
+                  paginationActions.handlePageSizeChange(
+                    Number(event.target.value) as (typeof PAGE_SIZE_OPTIONS)[number],
+                  )
+                }
                 className="h-8 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 {PAGE_SIZE_OPTIONS.map((size) => (
@@ -90,37 +75,37 @@ export function ServicesPage() {
       ) : null}
 
       <ServicesFiltersBar
-        keyword={keyword}
-        onKeywordChange={handleKeywordChange}
-        isFilterPopoverOpen={isFilterPopoverOpen}
-        onFilterPopoverOpenChange={setIsFilterPopoverOpen}
-        appliedFilterCount={appliedFilterCount}
-        unappliedDraftCount={unappliedDraftCount}
-        categories={categories}
-        owners={owners}
-        draftFilters={draftFilters}
-        onToggleDraftValue={handleToggleDraftValue}
-        onDraftExecutedFromChange={handleDraftExecutedFromChange}
-        onDraftExecutedToChange={handleDraftExecutedToChange}
-        onResetDraftFilters={handleResetDraftFilters}
-        onApplyDraftFilters={handleApplyDraftFilters}
-        onResetAppliedFilters={handleResetAppliedFilters}
+        keyword={filters.keyword}
+        onKeywordChange={filterActions.handleKeywordChange}
+        isFilterPopoverOpen={filters.isFilterPopoverOpen}
+        onFilterPopoverOpenChange={filterActions.setIsFilterPopoverOpen}
+        appliedFilterCount={filters.appliedFilterCount}
+        unappliedDraftCount={filters.unappliedDraftCount}
+        categories={filters.categories}
+        owners={filters.owners}
+        draftFilters={filters.draftFilters}
+        onToggleDraftValue={filterActions.handleToggleDraftValue}
+        onDraftExecutedFromChange={filterActions.handleDraftExecutedFromChange}
+        onDraftExecutedToChange={filterActions.handleDraftExecutedToChange}
+        onResetDraftFilters={filterActions.handleResetDraftFilters}
+        onApplyDraftFilters={filterActions.handleApplyDraftFilters}
+        onResetAppliedFilters={filterActions.handleResetAppliedFilters}
       />
 
       <ServicesTable
-        services={pagedServices}
-        onSort={handleSort}
-        sortIndicator={sortIndicator}
-        onExecuteService={handleExecuteService}
+        services={table.pagedServices}
+        onSort={tableActions.handleSort}
+        sortIndicator={table.sortIndicator}
+        onExecuteService={tableActions.handleExecuteService}
       />
 
       {!isLoading && !isError ? (
         <ServicesPagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPrevPage={goToPrevPage}
-          onNextPage={goToNextPage}
-          onGoToPage={goToPage}
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          onPrevPage={paginationActions.goToPrevPage}
+          onNextPage={paginationActions.goToNextPage}
+          onGoToPage={paginationActions.goToPage}
         />
       ) : null}
     </div>
