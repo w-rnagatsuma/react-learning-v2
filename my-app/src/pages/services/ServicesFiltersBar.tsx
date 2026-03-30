@@ -9,6 +9,17 @@ import {
   type ServiceFilters,
 } from "@/pages/services/servicesPageUtils";
 
+/**
+ * ServicesPage専用のフィルターUI。
+ *
+ * 共通部品 `ListFiltersBar` に対して、サービス一覧の具体的なフィルター項目
+ * （カテゴリ/担当/実行日）を `children` として供給する。
+ *
+ * 再利用時の目安:
+ * - `filterState`: 表示状態と下書き値をまとめた読み取り専用データ
+ * - `filterActions`: 状態更新と適用/リセット操作のハンドラ群
+ * - 「状態」と「操作」を分離すると、別一覧画面へ横展開しやすい
+ */
 type ServicesFiltersBarProps = {
   filterState: {
     keyword: string;

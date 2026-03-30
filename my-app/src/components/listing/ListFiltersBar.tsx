@@ -5,19 +5,48 @@ import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon } from "@/components/ui/input-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
+/**
+ * 一覧画面向けの共通フィルターバー。
+ *
+ * 役割:
+ * - キーワード検索入力
+ * - フィルターPopoverの開閉
+ * - フィルター適用/下書きリセット/適用済みリセットの操作導線
+ *
+ * 依存関係:
+ * - UI: `Button`, `Input`, `InputGroup`, `Popover`
+ * - アイコン: `lucide-react` の `Search`
+ *
+ * 設計メモ:
+ * - 実際のフィルター項目UIは `children` に委譲する。
+ * - フィルター状態は呼び出し側で管理し、このコンポーネントは制御コンポーネントとして扱う。
+ */
 type ListFiltersBarProps = {
+  /** キーワード検索欄の現在値 */
   keyword: string;
+  /** キーワード検索欄の変更ハンドラ */
   onKeywordChange: (value: string) => void;
+  /** フィルターPopoverの開閉状態 */
   isFilterPopoverOpen: boolean;
+  /** フィルターPopoverの開閉状態変更ハンドラ */
   onFilterPopoverOpenChange: (open: boolean) => void;
+  /** 適用済みフィルター数。0より大きいと件数バッジを表示 */
   appliedFilterCount: number;
+  /** 未適用の下書き変更数。0より大きいと適用ボタンに件数バッジを表示 */
   unappliedDraftCount: number;
+  /** 下書き状態を初期値へ戻す */
   onResetDraftFilters: () => void;
+  /** 下書き状態を適用済み状態へ反映する */
   onApplyDraftFilters: () => void;
+  /** 適用済み状態を初期値へ戻す */
   onResetAppliedFilters: () => void;
+  /** キーワード入力欄のプレースホルダー */
   keywordPlaceholder?: string;
+  /** キーワード入力欄のaria-label */
   keywordAriaLabel?: string;
+  /** フィルターボタンのラベル */
   filterButtonLabel?: string;
+  /** フィルター項目UI。カテゴリや日付範囲などを任意に差し込む */
   children: ReactNode;
 };
 
