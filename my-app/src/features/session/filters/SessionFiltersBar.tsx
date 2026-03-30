@@ -1,4 +1,4 @@
-import { ListFiltersBar } from "@/components/listing/ListFiltersBar";
+import { FilterBarShell } from "@/components/filters/FilterBarShell";
 
 type SessionFiltersState = {
   keyword: string;
@@ -48,7 +48,7 @@ export function SessionFiltersBar({ filterState, filterActions }: SessionFilters
   } = filterActions;
 
   return (
-    <ListFiltersBar
+    <FilterBarShell
       keyword={keyword}
       onKeywordChange={onKeywordChange}
       keywordAriaLabel="セッション一覧のテキスト検索"
@@ -121,6 +121,6 @@ export function SessionFiltersBar({ filterState, filterActions }: SessionFilters
           </div>
         </div>
       </div>
-    </ListFiltersBar>
+    </FilterBarShell>
   );
 }

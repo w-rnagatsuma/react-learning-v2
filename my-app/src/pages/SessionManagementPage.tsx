@@ -7,7 +7,7 @@ import { useRecentServiceExecutions } from "@/hooks/api/useRecentServiceExecutio
 import { useServices } from "@/hooks/api/useServices";
 import { useAllServiceSessions } from "@/hooks/api/useAllServiceSessions";
 import { useDeleteServiceSession } from "@/hooks/api/useDeleteServiceSession";
-import { SessionFiltersBar } from "@/pages/session/SessionFiltersBar";
+import { SessionFiltersBar } from "@/features/session/filters/SessionFiltersBar";
 
 type ExecutedAtDisplay = {
   date: string;

@@ -1,5 +1,5 @@
 import { CalendarIcon } from "lucide-react";
-import { ListFiltersBar } from "@/components/listing/ListFiltersBar";
+import { FilterBarShell } from "@/components/filters/FilterBarShell";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -12,7 +12,7 @@ import {
 /**
  * ServicesPage専用のフィルターUI。
  *
- * 共通部品 `ListFiltersBar` に対して、サービス一覧の具体的なフィルター項目
+ * 共通部品 `FilterBarShell` に対して、サービス一覧の具体的なフィルター項目
  * （カテゴリ/担当/実行日）を `children` として供給する。
  *
  * 再利用時の目安:
@@ -20,7 +20,7 @@ import {
  * - `filterActions`: 状態更新と適用/リセット操作のハンドラ群
  * - 「状態」と「操作」を分離すると、別一覧画面へ横展開しやすい
  */
-type ServicesFiltersBarProps = {
+type ServiceFiltersBarProps = {
   filterState: {
     keyword: string;
     isFilterPopoverOpen: boolean;
@@ -42,10 +42,10 @@ type ServicesFiltersBarProps = {
   };
 };
 
-export function ServicesFiltersBar({
+export function ServiceFiltersBar({
   filterState,
   filterActions,
-}: ServicesFiltersBarProps) {
+}: ServiceFiltersBarProps) {
   const { keyword, isFilterPopoverOpen, appliedFilterCount, unappliedDraftCount, categories, owners, draftFilters } =
     filterState;
   const {
@@ -60,7 +60,7 @@ export function ServicesFiltersBar({
   } = filterActions;
 
   return (
-    <ListFiltersBar
+    <FilterBarShell
       keyword={keyword}
       onKeywordChange={handleKeywordChange}
       keywordAriaLabel="サービス一覧のテキスト検索"
@@ -179,6 +179,6 @@ export function ServicesFiltersBar({
                 </Popover>
               </div>
       </div>
-    </ListFiltersBar>
+    </FilterBarShell>
   );
 }

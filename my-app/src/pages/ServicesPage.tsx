@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useServices } from "@/hooks/api/useServices";
-import { ServicesFiltersBar } from "@/pages/services/ServicesFiltersBar";
+import { ServiceFiltersBar } from "@/features/services/filters/ServiceFiltersBar";
 import { ServicesPagination } from "@/pages/services/ServicesPagination";
 import { ServicesTable } from "@/pages/services/ServicesTable";
 import { PAGE_SIZE_OPTIONS } from "@/pages/services/servicesPageUtils";
@@ -74,7 +74,7 @@ export function ServicesPage() {
         </div>
       ) : null}
 
-      <ServicesFiltersBar
+      <ServiceFiltersBar
         filterState={filters}
         filterActions={filterActions}
       />

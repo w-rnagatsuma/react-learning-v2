@@ -21,7 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
  * - 実際のフィルター項目UIは `children` に委譲する。
  * - フィルター状態は呼び出し側で管理し、このコンポーネントは制御コンポーネントとして扱う。
  */
-type ListFiltersBarProps = {
+type FilterBarShellProps = {
   /** キーワード検索欄の現在値 */
   keyword: string;
   /** キーワード検索欄の変更ハンドラ */
@@ -50,7 +50,7 @@ type ListFiltersBarProps = {
   children: ReactNode;
 };
 
-export function ListFiltersBar({
+export function FilterBarShell({
   keyword,
   onKeywordChange,
   isFilterPopoverOpen,
@@ -64,7 +64,7 @@ export function ListFiltersBar({
   keywordAriaLabel = "一覧のテキスト検索",
   filterButtonLabel = "フィルター",
   children,
-}: ListFiltersBarProps) {
+}: FilterBarShellProps) {
   return (
     <div className="flex flex-wrap items-start justify-end gap-2">
       <div className="w-full min-w-[240px] flex-1 md:max-w-sm">
