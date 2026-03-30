@@ -75,21 +75,8 @@ export function ServicesPage() {
       ) : null}
 
       <ServicesFiltersBar
-        keyword={filters.keyword}
-        onKeywordChange={filterActions.handleKeywordChange}
-        isFilterPopoverOpen={filters.isFilterPopoverOpen}
-        onFilterPopoverOpenChange={filterActions.setIsFilterPopoverOpen}
-        appliedFilterCount={filters.appliedFilterCount}
-        unappliedDraftCount={filters.unappliedDraftCount}
-        categories={filters.categories}
-        owners={filters.owners}
-        draftFilters={filters.draftFilters}
-        onToggleDraftValue={filterActions.handleToggleDraftValue}
-        onDraftExecutedFromChange={filterActions.handleDraftExecutedFromChange}
-        onDraftExecutedToChange={filterActions.handleDraftExecutedToChange}
-        onResetDraftFilters={filterActions.handleResetDraftFilters}
-        onApplyDraftFilters={filterActions.handleApplyDraftFilters}
-        onResetAppliedFilters={filterActions.handleResetAppliedFilters}
+        filterState={filters}
+        filterActions={filterActions}
       />
 
       <ServicesTable
