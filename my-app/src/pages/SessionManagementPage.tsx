@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { useRecentServiceExecutions } from "@/hooks/api/useRecentServiceExecutio
 import { useServices } from "@/hooks/api/useServices";
 import { useAllServiceSessions } from "@/hooks/api/useAllServiceSessions";
 import { useDeleteServiceSession } from "@/hooks/api/useDeleteServiceSession";
+import { SessionFiltersBar } from "@/pages/session/SessionFiltersBar";
 
 type ExecutedAtDisplay = {
   date: string;
@@ -44,6 +45,12 @@ export function SessionManagementPage() {
     isError: isRecentExecutionsError,
   } = useRecentServiceExecutions(8);
   const deleteServiceSessionMutation = useDeleteServiceSession();
+  const [keyword, setKeyword] = useState("");
+  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState(false);
+  const [appliedServiceIds, setAppliedServiceIds] = useState<string[]>([]);
+  const [appliedExecutors, setAppliedExecutors] = useState<string[]>([]);
+  const [draftServiceIds, setDraftServiceIds] = useState<string[]>([]);
+  const [draftExecutors, setDraftExecutors] = useState<string[]>([]);
 
   const allSessions = useMemo(() => sessionsData?.sessions ?? [], [sessionsData?.sessions]);
   const servicesById = useMemo(
@@ -55,10 +62,53 @@ export function SessionManagementPage() {
     () => recentExecutionsData?.recentExecutions ?? [],
     [recentExecutionsData?.recentExecutions],
   );
+  const serviceIdOptions = useMemo(() => {
+    return Array.from(new Set(allSessions.map((session) => session.serviceId))).sort((a, b) =>
+      a.localeCompare(b, "ja"),
+    );
+  }, [allSessions]);
+  const executorOptions = useMemo(() => {
+    return Array.from(new Set(allSessions.map((session) => session.executedByName))).sort((a, b) =>
+      a.localeCompare(b, "ja"),
+    );
+  }, [allSessions]);
   const isEnglishLocale = useMemo(
     () => typeof navigator !== "undefined" && navigator.language.toLowerCase().startsWith("en"),
     [],
   );
+  const appliedFilterCount = appliedServiceIds.length + appliedExecutors.length;
+  const draftFilterCount = draftServiceIds.length + draftExecutors.length;
+  const hasPendingDraft = useMemo(() => {
+    const sameServiceIds =
+      appliedServiceIds.length === draftServiceIds.length &&
+      appliedServiceIds.every((serviceId, index) => serviceId === draftServiceIds[index]);
+    const sameExecutors =
+      appliedExecutors.length === draftExecutors.length &&
+      appliedExecutors.every((executor, index) => executor === draftExecutors[index]);
+
+    return !(sameServiceIds && sameExecutors);
+  }, [appliedExecutors, appliedServiceIds, draftExecutors, draftServiceIds]);
+  const unappliedDraftCount = hasPendingDraft ? draftFilterCount : 0;
+
+  const filteredSessions = useMemo(() => {
+    const normalizedKeyword = keyword.trim().toLowerCase();
+
+    return allSessions.filter((session) => {
+      const serviceName = servicesById.get(session.serviceId)?.name ?? "";
+      const matchesKeyword =
+        normalizedKeyword.length === 0 ||
+        session.id.toLowerCase().includes(normalizedKeyword) ||
+        session.serviceId.toLowerCase().includes(normalizedKeyword) ||
+        serviceName.toLowerCase().includes(normalizedKeyword) ||
+        session.executedByName.toLowerCase().includes(normalizedKeyword);
+      const matchesServiceId =
+        appliedServiceIds.length === 0 || appliedServiceIds.includes(session.serviceId);
+      const matchesExecutor =
+        appliedExecutors.length === 0 || appliedExecutors.includes(session.executedByName);
+
+      return matchesKeyword && matchesServiceId && matchesExecutor;
+    });
+  }, [allSessions, appliedExecutors, appliedServiceIds, keyword, servicesById]);
 
   const createExecutionPath = useCallback((serviceId: string) => {
     const executionToken =
@@ -83,6 +133,40 @@ export function SessionManagementPage() {
 
     window.open(executionUrl, `_service_execute_${encodeURIComponent(serviceId)}`, windowFeatures);
   }, [createExecutionPath]);
+
+  const handleToggleDraftServiceId = useCallback((serviceId: string) => {
+    setDraftServiceIds((prev) => {
+      const exists = prev.includes(serviceId);
+      const next = exists ? prev.filter((value) => value !== serviceId) : [...prev, serviceId];
+      return next.sort((a, b) => a.localeCompare(b, "ja"));
+    });
+  }, []);
+
+  const handleToggleDraftExecutor = useCallback((executor: string) => {
+    setDraftExecutors((prev) => {
+      const exists = prev.includes(executor);
+      const next = exists ? prev.filter((value) => value !== executor) : [...prev, executor];
+      return next.sort((a, b) => a.localeCompare(b, "ja"));
+    });
+  }, []);
+
+  const handleApplyDraftFilters = useCallback(() => {
+    setAppliedServiceIds(draftServiceIds);
+    setAppliedExecutors(draftExecutors);
+    setIsFilterPopoverOpen(false);
+  }, [draftExecutors, draftServiceIds]);
+
+  const handleResetDraftFilters = useCallback(() => {
+    setDraftServiceIds([]);
+    setDraftExecutors([]);
+  }, []);
+
+  const handleResetAppliedFilters = useCallback(() => {
+    setAppliedServiceIds([]);
+    setAppliedExecutors([]);
+    setDraftServiceIds([]);
+    setDraftExecutors([]);
+  }, []);
 
   if (isAuthLoading) {
     return <div className="p-6">Loading...</div>;
@@ -155,8 +239,30 @@ export function SessionManagementPage() {
       <section className="space-y-3 rounded-md border bg-white p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-800">セッション一覧</h2>
-          <p className="text-xs text-slate-600">最新順</p>
+          <p className="text-xs text-slate-600">最新順 / 全{allSessions.length}件中 {filteredSessions.length}件</p>
         </div>
+
+        <SessionFiltersBar
+          filterState={{
+            keyword,
+            isFilterPopoverOpen,
+            appliedFilterCount,
+            unappliedDraftCount,
+            serviceIdOptions,
+            executorOptions,
+            draftServiceIds,
+            draftExecutors,
+          }}
+          filterActions={{
+            onKeywordChange: setKeyword,
+            onFilterPopoverOpenChange: setIsFilterPopoverOpen,
+            onResetDraftFilters: handleResetDraftFilters,
+            onApplyDraftFilters: handleApplyDraftFilters,
+            onResetAppliedFilters: handleResetAppliedFilters,
+            onToggleDraftServiceId: handleToggleDraftServiceId,
+            onToggleDraftExecutor: handleToggleDraftExecutor,
+          }}
+        />
 
         {isSessionsLoading ? (
           <p className="text-sm text-slate-600">セッション一覧を読み込み中です...</p>
@@ -174,7 +280,11 @@ export function SessionManagementPage() {
           <p className="text-sm text-slate-600">表示できるセッションはありません。</p>
         ) : null}
 
-        {!isSessionsLoading && !isSessionsError && allSessions.length > 0 ? (
+        {!isSessionsLoading && !isSessionsError && allSessions.length > 0 && filteredSessions.length === 0 ? (
+          <p className="text-sm text-slate-600">条件に一致するセッションはありません。</p>
+        ) : null}
+
+        {!isSessionsLoading && !isSessionsError && filteredSessions.length > 0 ? (
           <div className="overflow-x-auto rounded-md border bg-background">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
@@ -188,7 +298,7 @@ export function SessionManagementPage() {
                 </tr>
               </thead>
               <tbody>
-                {allSessions.map((session, index) => {
+                {filteredSessions.map((session, index) => {
                   const { date: executedDate, time: executedTime } = formatExecutedAtDisplay(
                     session.executedAt,
                     isEnglishLocale,
