@@ -1,10 +1,43 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useSession } from "@/api/session/SessionContext";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useServices } from "@/hooks/api/useServices";
-import { useServiceSessions } from "@/hooks/api/useServiceSessions";
+import { useServiceSessions, type ServiceSession } from "@/hooks/api/useServiceSessions";
 import { useExecuteService } from "@/hooks/api/useExecuteService";
+
+function readRestoredSession(executionToken: string | null): ServiceSession | null {
+  if (!executionToken) {
+    return null;
+  }
+
+  const resultKey = `service_execute_result_${executionToken}`;
+  const raw = sessionStorage.getItem(resultKey);
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw) as ServiceSession;
+  } catch {
+    sessionStorage.removeItem(resultKey);
+    return null;
+  }
+}
+
+function readExecutionGuard(executionToken: string | null): "inflight" | "done" | null {
+  if (!executionToken) {
+    return null;
+  }
+
+  const guardKey = `service_execute_once_${executionToken}`;
+  const guard = sessionStorage.getItem(guardKey);
+  if (guard === "inflight" || guard === "done") {
+    return guard;
+  }
+
+  return null;
+}
 
 export function ServiceExecutionPage() {
   const { isLoading: isAuthLoading, isAuthenticated } = useRequireAuth();
@@ -14,22 +47,32 @@ export function ServiceExecutionPage() {
   const { user } = useSession();
   const { data: servicesData, isLoading: isServicesLoading } = useServices();
   const { data: sessionsData, isLoading: isSessionsLoading } = useServiceSessions(serviceId);
-  const { mutateAsync, isPending, isSuccess, isError } = useExecuteService();
+  const { mutateAsync, data: createdSession, isPending, isSuccess, isError } = useExecuteService();
+  const executionLockRef = useRef<string | null>(null);
 
   const service = servicesData?.services.find((item) => item.id === serviceId);
   const sessions = sessionsData?.sessions ?? [];
+  const restoredSession = useMemo(() => readRestoredSession(executionToken), [executionToken]);
+  const executionGuard = readExecutionGuard(executionToken);
+  const isExecutionGuardLoading = Boolean(executionToken) && executionGuard !== "done" && !isError;
+  const displayedSession = createdSession ?? restoredSession;
 
   useEffect(() => {
-    if (!serviceId || !service || !user || !executionToken) {
+    executionLockRef.current = null;
+  }, [executionToken]);
+
+  useEffect(() => {
+    if (!serviceId || !service || !user || !executionToken || restoredSession) {
       return;
     }
 
     const guardKey = `service_execute_once_${executionToken}`;
-    const guard = sessionStorage.getItem(guardKey);
-    if (guard === "inflight" || guard === "done") {
+    const resultKey = `service_execute_result_${executionToken}`;
+    if (executionGuard || executionLockRef.current === executionToken) {
       return;
     }
 
+    executionLockRef.current = executionToken;
     sessionStorage.setItem(guardKey, "inflight");
 
     mutateAsync({
@@ -37,13 +80,15 @@ export function ServiceExecutionPage() {
       executedByUserId: user.id,
       executedByName: user.name,
     })
-      .then(() => {
+      .then((result) => {
+        sessionStorage.setItem(resultKey, JSON.stringify(result));
         sessionStorage.setItem(guardKey, "done");
       })
       .catch(() => {
         sessionStorage.removeItem(guardKey);
+        executionLockRef.current = null;
       });
-  }, [executionToken, mutateAsync, service, serviceId, user]);
+  }, [executionGuard, executionToken, mutateAsync, restoredSession, service, serviceId, user]);
 
   if (isAuthLoading) {
     return <div className="p-6">Loading...</div>;
@@ -71,16 +116,41 @@ export function ServiceExecutionPage() {
             </p>
           ) : null}
 
-          {isPending ? (
-            <p className="text-xs text-muted-foreground">executeService を実行中です...</p>
+          {isExecutionGuardLoading ? (
+            <p className="text-xs text-muted-foreground">executeService の完了を待機中です...</p>
           ) : null}
 
           {executionToken && isSuccess ? (
             <p className="text-xs text-emerald-700">service_session に実行履歴を追加しました。</p>
           ) : null}
 
+          {executionToken && !isPending && !isError && restoredSession && !isSuccess ? (
+            <p className="text-xs text-emerald-700">同一セッションで作成した情報を復元しました。</p>
+          ) : null}
+
+          {executionToken && displayedSession ? (
+            <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs">
+              <p className="font-semibold text-emerald-800">今回作成した情報</p>
+              <p className="mt-1 text-emerald-900">
+                session_id: <span className="font-mono">{displayedSession.id}</span>
+              </p>
+              <p className="text-emerald-900">
+                service_id: <span className="font-mono">{displayedSession.serviceId}</span>
+              </p>
+              <p className="text-emerald-900">executed_by: {displayedSession.executedByName}</p>
+              <p className="text-emerald-900">
+                executed_at: {new Date(displayedSession.executedAt).toLocaleString("ja-JP")}
+              </p>
+              <p className="text-emerald-900">result: {displayedSession.result}</p>
+            </div>
+          ) : null}
+
           {executionToken && isError ? (
             <p className="text-xs text-destructive">実行に失敗しました。再実行は一覧画面の「実行」から行ってください。</p>
+          ) : null}
+
+          {executionToken && !isPending && !isError && !isSuccess && executionGuard === "done" ? (
+            <p className="text-xs text-muted-foreground">この executionToken は既に実行済みです。</p>
           ) : null}
         </div>
       </div>
